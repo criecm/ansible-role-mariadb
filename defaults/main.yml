@@ -1,0 +1,22 @@
+---
+# defaults file for criecm.mariadb
+mariadb_version: 10.1
+
+mariadb_zfs_base:
+mariadb_basedir: /var/db/mysql
+mariadb_logdir: /var/log/mysql
+mariadb_owner: mysql
+mariadb_group: mysql
+
+# if zfs
+mariadb_zfs_base: ''
+
+mariadb_admin_user: admin
+mariadb_admin_password: ''
+
+mariadb_root_password: ''
+
+mariadb_users: []
+mariadb_maintenance_users: []
+
+mariadb_dbs: []

@@ -1,0 +1,27 @@
+[mysqld]
+log-error={{ mariadb_logdir }}/err.log
+log-warnings = 2
+general_log=0
+general_log_file={{ mariadb_logdir }}/general.log
+
+long_query_time = 2
+slow_query_log = 1
+slow_query_log_file = {{ mariadb_logdir }}/slow.log
+
+max_connections = 200
+
+max_allowed_packet = 32M
+
+tmp_table_size = 512M
+;table_cache = 524288
+;query_cache_size = 512K
+;concurrent_insert=2
+;thread_cache_size = 10
+;local-infile
+innodb_buffer_pool_size = 2G
+{% if mariadb_zfs_base %}
+; ZFS needs sync=disabled
+innodb_flush_log_at_trx_commit = 2
+skip-innodb_doublewrite
+{% endif %}
+

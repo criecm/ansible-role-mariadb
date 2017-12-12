@@ -1,0 +1,18 @@
+galaxy_info:
+  author: Geoffroy Desvernay
+  description: mariadb server instance(s) + DBs
+  company: Ecole Centrale Marseille
+
+  license: BSD
+
+  min_ansible_version: 2.4
+
+  platforms:
+    - name: FreeBSD
+      versions: 11.1
+
+
+  galaxy_tags:
+    - mariadb
+
+dependencies: []

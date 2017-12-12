@@ -1,0 +1,3 @@
+---
+# vars file for criecm.mariadb
+mariadb_service: 'mysql-server'
