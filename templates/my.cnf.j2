@@ -1,4 +1,8 @@
 [mysqld]
+{% if server_id %}
+server_id={{ server_id }}
+{% endif %}
+
 log-error={{ mariadb_logdir }}/err.log
 log-warnings = 2
 general_log=0

@@ -2,7 +2,6 @@
 # defaults file for criecm.mariadb
 mariadb_version: 10.1
 
-mariadb_zfs_base:
 mariadb_basedir: /var/db/mysql
 mariadb_logdir: /var/log/mysql
 mariadb_owner: mysql

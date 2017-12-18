@@ -21,6 +21,7 @@
     src: my.cnf.j2
     dest: '{{ mariadb_basedir }}/my.cnf'
     mode: '0644'
+    force: no
 
 - name: install mariadb
   pkgng:
@@ -46,34 +47,20 @@
     state: directory
     owner: '{{ mariadb_owner }}'
     group: '{{ mariadb_group }}'
-    mode: '0770'
+    mode: 'ug+rwX,o-rwx'
+    recurse: yes
 
-- name: start mariadb server
-  service:
-    name: '{{ mariadb_service }}'
-    state: started
-    enabled: yes
-  when: install_mariadb.changed
-
-# DBs
+# first install
 - block:
+  - name: start mariadb server
+    service:
+      name: '{{ mariadb_service }}'
+      state: started
+      enabled: yes
   - name: no test db
     mysql_db:
       name: test
       state: absent
-    when: install_mariadb.changed
-  - name: new dbs
-    mysql_db:
-      name: '{{ item.name }}'
-      login_user: root
-      login_password: "11l'@mO"
-      state: present
-    with_items:
-      - '{{ mariadb_dbs }}'
-    when: 'mariadb_dbs | count > 0'
-
-# default users
-- block:
   - mysql_user:
       name: ''
       host: localhost
@@ -83,34 +70,60 @@
       host_all: yes
       state: absent
   - mysql_user:
-      name: '{{ mariadb_admin_user }}'
-      password: '{{ mariadb_admin_password }}'
-      host: '%'
-      priv: '*.*:ALL'
-      state: present
-    when: 'mariadb_admin_user != "" and mariadb_admin_password != ""'
+      name: 'root'
+      host: '127.0.0.1'
+      state: absent
   - mysql_user:
-      name: '{{ item.name }}'
-      priv: '{{ item.priv }}'
-      host: '{{ item.host }}'
-      password: '{{ item.password | default(item.name | hash("sha256")) }}'
-      state: present
-    with_items: '{{ mariadb_users | union(mariadb_maintenance_users) }}'
-  - mysql_user:
-      name: root
-      password: '{{ mariadb_root_password }}'
-      host: localhost
-      priv: '*.*:ALL'
-      state: present
-  - copy:
-      dest: /root/.my.cnf
-      mode: '0600'
-      content: |
-        [mysql]
-        user=root
-        password={{ mariadb_root_password }}
-        [mysqladmin]
-        user=root
-        password={{ mariadb_root_password }}
+      name: 'root'
+      host: '::1'
+      state: absent
   when: install_mariadb.changed
+
+# default admins
+- mysql_user:
+    name: '{{ mariadb_admin_user }}'
+    password: '{{ mariadb_admin_password }}'
+    update_password: on_create
+    host: '%'
+    priv: '*.*:ALL,GRANT'
+    state: present
+  when: 'mariadb_admin_user != "" and mariadb_admin_password != ""'
+
+- mysql_user:
+    name: root
+    password: '{{ mariadb_root_password }}'
+    host: localhost
+    append_privs: yes
+    priv: '*.*:ALL,GRANT'
+    check_implicit_admin: yes
+    state: present
+
+- copy:
+    dest: /root/.my.cnf
+    mode: '0600'
+    content: |
+      [mysql]
+      user=root
+      {% if mariadb_root_password != "" %}password={{ mariadb_root_password }}{% endif %}
+      [mysqladmin]
+      user=root
+      {% if mariadb_root_password != "" %}password={{ mariadb_root_password }}{% endif %}
+
+# admin users
+- mysql_user:
+    name: '{{ item.name }}'
+    priv: '{{ item.priv }}'
+    host: '{{ item.host }}'
+    password: '{{ item.password | default(item.name | hash("sha256")) }}'
+    state: present
+  with_items: '{{ mariadb_users | union(mariadb_maintenance_users) }}'
+
+# DBs
+- name: new dbs
+  mysql_db:
+    name: '{{ item.name }}'
+    state: present
+  with_items:
+    - '{{ mariadb_dbs }}'
+  when: 'mariadb_dbs | count > 0'
 
