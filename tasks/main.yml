@@ -112,8 +112,8 @@
 # admin users
 - mysql_user:
     name: '{{ item.name }}'
-    priv: '{{ item.priv }}'
-    host: '{{ item.host }}'
+    priv: '{{ item.priv | default("*.*:USAGE") }}'
+    host: '{{ item.host | default("localhost") }}'
     password: '{{ item.password | default(item.name | hash("sha256")) }}'
     state: present
   with_items: '{{ mariadb_users | union(mariadb_maintenance_users) }}'
