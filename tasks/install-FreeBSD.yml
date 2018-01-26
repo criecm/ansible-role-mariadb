@@ -1,0 +1,29 @@
+---
+- name: rc.conf
+  lineinfile:
+    dest: /etc/rc.conf
+    line: '{{ item.key }}="{{ item.value }}"'
+    regexp: '^{{ item.key }}='
+  with_items:
+    - { key: mysql_enable, value: "YES" }
+    - { key: mysql_dbdir, value: '{{ mariadb_basedir }}' }
+
+- name: zfs props
+  zfs:
+    name: '{{ mariadb_zfs_base }}'
+    state: present
+    mountpoint: '{{ mariadb_basedir }}'
+    recordsize: 16K
+  when: mariadb_zfs_base != ""
+
+- name: install mariadb
+  pkgng:
+    name: '{{ item }}'
+    state: present
+  with_items:
+    - mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-server
+    - py27-MySQLdb
+  register: install_mariadb
+  when: 'ansible_os_family == "FreeBSD"'
+
+
