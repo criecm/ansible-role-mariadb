@@ -81,6 +81,7 @@
       [mysql]
       user=root
       {% if mariadb_root_password != "" %}password={{ mariadb_root_password }}{% endif %}
+      
       [mysqladmin]
       user=root
       {% if mariadb_root_password != "" %}password={{ mariadb_root_password }}{% endif %}
