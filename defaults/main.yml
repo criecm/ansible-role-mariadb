@@ -19,3 +19,5 @@ mariadb_users: []
 mariadb_maintenance_users: []
 
 mariadb_dbs: []
+
+server_id:
