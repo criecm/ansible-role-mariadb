@@ -26,4 +26,11 @@
   register: install_mariadb
   when: 'ansible_os_family == "FreeBSD"'
 
+- name: newsyslog
+  copy:
+    force: no
+    path: /usr/local/etc/newsyslog.d/mariadb.conf
+    content: |
+      {{ mariadb_logdir }}/*.log  root:{{ mariadb_group }}  640 7 1000  @T00  G
+
 
