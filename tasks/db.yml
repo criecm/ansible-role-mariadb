@@ -1,0 +1,20 @@
+---
+- include_vars: db.yml
+
+- debug: var=mydb
+
+# DB
+- name: new db
+  mysql_db:
+    name: '{{ mydb.name }}'
+    state: present
+
+# and associated user
+- name: new user
+  mysql_user:
+    name: '{{ mydb.user | default(mydb.name) }}'
+    priv: '{{ mydb.priv }}'
+    host: '{{ mydb.fromhost }}'
+    password: '{{ mydb.pass }}'
+    state: present
+
