@@ -16,6 +16,11 @@
     recordsize: 16K
   when: mariadb_zfs_base != ""
 
+- name: enable zfs
+  service:
+    name: zfs
+    enabled: yes
+
 - name: install mariadb
   pkgng:
     name: '{{ item }}'

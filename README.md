@@ -1,11 +1,8 @@
-MariaDB
-=======
+# MariaDB
 
-Install/setup mariadb on FreeBSD
+Setup mariadb on FreeBSD host
 
-Requirements
-------------
-None
+Using `include_role/tasks_from: db.yml` creates a single db+user
 
 ## Role Variables (default value)
 
@@ -29,22 +26,24 @@ None
 * `mariadb_dbs`: ([])
   List of databases to create (dict with keys 'name')
 
-Dependencies
-------------
-
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
-
-Example Playbook
-----------------
+## Example Playbooks
 
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
 
+    # install / create db's from `mariadb_dbs` and users from `mariadb_users` and `mariadb_maintenance_users`
     - hosts: servers
       roles:
          - { role: criecm.mariadb, mariadb_default_password: '42', mariadb_zfs_base: 'zdata/mariadb' }
 
-License
--------
+    # just create a single database
+    - hosts: webservers
+      include_role:
+        name: criecm.mariadb
+	tasks_from: db.yml
+      vars:
+        mariadb: { name: mydatabase, user: myuser, pass: hispass, fromhost: mywebsrv.my.domain, priv: 'mydatabase.*:ALL' }
+
+## License
 
 BSD
 
