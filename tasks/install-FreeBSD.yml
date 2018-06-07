@@ -12,8 +12,9 @@
   zfs:
     name: '{{ mariadb_zfs_base }}'
     state: present
-    mountpoint: '{{ mariadb_basedir }}'
-    recordsize: 16K
+    extra_zfs_properties:
+      mountpoint: '{{ mariadb_basedir }}'
+      recordsize: 16K
   when: mariadb_zfs_base != ""
 
 - name: enable zfs
