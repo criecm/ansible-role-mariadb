@@ -15,6 +15,7 @@
     name: '{{ mydb.user | default(mydb.name) }}'
     priv: '{{ mydb.priv }}'
     host: '{{ mydb.fromhost }}'
-    password: '{{ mydb.pass }}'
+    password: '{{ mydb.password | default(omit) }}'
+    update_password: on_create
     state: present
 

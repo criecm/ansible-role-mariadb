@@ -2,7 +2,6 @@
 db_defaults:
   priv: '{{ db.name }}.*:ALL'
   user: '{{ db.name }}'
-  pass: '{{ db.name | uuid | hash("sha256") }}'
   fromhost: '{{ db.fromhost | default("%") }}'
 
 mydb: '{{ db_defaults | combine(mariadb) }}'
