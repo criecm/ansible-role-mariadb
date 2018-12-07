@@ -25,13 +25,11 @@
 
 - name: install mariadb
   pkgng:
-    name: '{{ item }}'
+    name:
+      - 'mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-server'
+      - 'py{{ ansible_python_version | regex_replace("([2-3])\.([0-9]*)\..*$","\1\2") }}-MySQLdb'
     state: present
-  with_items:
-    - mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-server
-    - py{{ ansible_python_version | regex_replace("([2-3])\.([0-9]*)\..*$","\1\2") }}-MySQLdb
   register: install_mariadb
-  when: 'ansible_os_family == "FreeBSD"'
 
 - name: newsyslog
   copy:
