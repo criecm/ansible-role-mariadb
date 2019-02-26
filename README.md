@@ -17,7 +17,7 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
 * `mariadb_owner`: (mysql)
 * `mariadb_group`: (mysql)
 * `mariadb_zfs_base`: ('')
-  if any, will create/set recordsize to 16K
+  if any, will create/set recordsize to 16K and create innodb-logs subdir (128K)
 * `mariadb_users`: ([])
   Users to be created, dict with keys 'priv','name','password' and 'host'
   password won't be updated, only set at creation

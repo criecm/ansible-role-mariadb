@@ -27,6 +27,7 @@ tmp_table_size = 512M
 ;local-infile
 innodb_buffer_pool_size = 2G
 {% if mariadb_zfs_base %}
+innodb_log_group_home_dir = {{ mariadb_basedir }}/innodb-logs
 innodb_use_native_aio=ON
 innodb_use_trim=ON
 innodb_use_fallocate=ON

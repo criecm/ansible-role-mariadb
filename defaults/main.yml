@@ -21,3 +21,5 @@ mariadb_maintenance_users: []
 mariadb_dbs: []
 
 server_id:
+
+nagios_from: 127.0.0.1
