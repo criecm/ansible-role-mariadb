@@ -1,7 +1,10 @@
 ---
-- include_vars: db.yml
+- name: db vars
+  include_vars: db.yml
 
-- debug: var=mydb
+- name: 'working on {{ mydb.name }}'
+  debug:
+    var: mydb
 
 # DB
 - name: new db
@@ -18,4 +21,3 @@
     password: '{{ mydb.password | default(omit) }}'
     update_password: on_create
     state: present
-

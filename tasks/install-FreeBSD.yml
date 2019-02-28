@@ -15,8 +15,6 @@
   when: mariadb_zfs_base != ""
   ignore_errors: True
 
-- debug: var=zfs_base_fact
-
 - name: stop mysql pour zfs
   service:
     name: '{{ mariadb_service }}'
@@ -74,5 +72,4 @@
     dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
     content: |
       {{ mariadb_logdir }}/*.log  root:{{ mariadb_group }}  640 7 1000  @T00  G
-
 
