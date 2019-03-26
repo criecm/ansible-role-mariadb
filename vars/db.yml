@@ -1,7 +1,7 @@
 ---
 db_defaults:
-  priv: '{{ db.name }}.*:ALL'
-  user: '{{ db.name }}'
-  fromhost: '{{ db.fromhost | default("%") }}'
+  priv: '{{ mariadb.name }}.*:ALL'
+  user: '{{ mariadb.name }}'
+  fromhost: '{{ mariadb.fromhost | default("%") }}'
 
 mydb: '{{ db_defaults | combine(mariadb) }}'
