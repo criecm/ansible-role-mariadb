@@ -43,7 +43,7 @@ Including an example of how to use your role (for instance, with variables passe
 	tasks_from: db.yml
       vars:
         mariadb: { name: mydatabase, user: myuser, pass: hispass, fromhost: mywebsrv.my.domain, priv: 'mydatabase.*:ALL' }
-
+      # you'll find a generated password in `db_pass` fact if not provided
 ## License
 
 BSD
