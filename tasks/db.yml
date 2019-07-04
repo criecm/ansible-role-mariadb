@@ -10,6 +10,8 @@
 - name: new db
   mysql_db:
     name: '{{ mydb.name }}'
+    encoding: '{{ mydb.encoding | default("utf8") }}'
+    collation: '{{ mydb.collation | default("utf8_unicode_ci") }}'
     state: present
 
 # and associated user

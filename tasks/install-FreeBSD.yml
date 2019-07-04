@@ -58,6 +58,23 @@
     enabled: yes
   when: mariadb_zfs_base != ""
 
+- name: login.conf
+  blockinfile:
+    dest: /etc/login.conf
+    content: |
+      mysql:\
+        :lang=fr_FR.UTF-8:\
+        :charset=UTF-8:\
+        :tc=daemon:
+
+    marker: '# {mark} mariadb by ansible block'
+    backup: yes
+  register: loginconf
+
+- name: cap_mkdb
+  command: /sbin/cap_mkbd /etc/login.conf
+  when: loginconf.changed | default(False)
+
 - name: install mariadb
   pkgng:
     name:
