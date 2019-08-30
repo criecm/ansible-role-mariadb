@@ -37,19 +37,23 @@
       mysql_db:
         name: test
         state: absent
-    - mysql_user:
+    - name: no empty mysql user for localhost
+      mysql_user:
         name: ''
         host: localhost
         state: absent
-    - mysql_user:
+    - name: no empty mysql user for any host
+      mysql_user:
         name: ''
         host_all: yes
         state: absent
-    - mysql_user:
+    - name: no root on 127.0.0.1
+      mysql_user:
         name: 'root'
         host: '127.0.0.1'
         state: absent
-    - mysql_user:
+    - name: no root on ::1
+      mysql_user:
         name: 'root'
         host: '::1'
         state: absent
