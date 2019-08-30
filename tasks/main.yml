@@ -64,6 +64,7 @@
     name: '{{ mariadb_admin_user }}'
     password: '{{ mariadb_admin_password }}'
     update_password: on_create
+    login_unix_socket: '{{ mariadb_socket | default(omit) }}'
     host: '%'
     priv: '*.*:ALL,GRANT'
     state: present
@@ -83,6 +84,7 @@
   copy:
     dest: /root/.my.cnf
     mode: '0600'
+    backup: yes
     content: |
       [mysql]
       user=root

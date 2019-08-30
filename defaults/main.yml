@@ -7,6 +7,7 @@ mariadb_owner: mysql
 mariadb_group: mysql
 # if zfs
 mariadb_zfs_base: ''
+mariadb_socket: '/tmp/mysql.sock'
 mariadb_admin_user: admin
 mariadb_admin_password: ''
 mariadb_root_password: ''
