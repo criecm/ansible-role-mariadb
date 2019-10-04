@@ -72,7 +72,7 @@
   register: loginconf
 
 - name: cap_mkdb
-  command: /bin/cap_mkbd /etc/login.conf
+  command: cap_mkbd /etc/login.conf
   when: loginconf.changed | default(False)
 
 - name: install mariadb
