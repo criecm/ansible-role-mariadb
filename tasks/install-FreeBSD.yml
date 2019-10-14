@@ -12,18 +12,18 @@
   zfs_facts:
     dataset: '{{ mariadb_zfs_base }}'
   register: zfs_base_fact
-  when: mariadb_zfs_base | lenght > 0
+  when: mariadb_zfs_base | length > 0
   ignore_errors: True
 
 - name: stop mysql pour zfs
   service:
     name: '{{ mariadb_service }}'
     state: stopped
-  when: mariadb_zfs_base | lenght > 0 and ( zfs_base_fact.failed or not ansible_zfs_datasets[0].mountpoint == mariadb_basedir )
+  when: mariadb_zfs_base | length > 0 and ( zfs_base_fact.failed or not ansible_zfs_datasets[0].mountpoint == mariadb_basedir )
 
 - name: move old dir
   command: 'mv {{ mariadb_basedir }} {{ mariadb_basedir }}.orig'
-  when: mariadb_zfs_base | lenght > 0 and ( zfs_base_fact.failed or not ansible_zfs_datasets[0].mountpoint == mariadb_basedir )
+  when: mariadb_zfs_base | length > 0 and ( zfs_base_fact.failed or not ansible_zfs_datasets[0].mountpoint == mariadb_basedir )
   failed_when: False
 
 - name: 'zfs {{ mariadb_zfs_base }}'
@@ -33,7 +33,7 @@
     extra_zfs_properties:
       mountpoint: '{{ mariadb_basedir }}'
       recordsize: 16K
-  when: mariadb_zfs_base | lenght > 0 and ( zfs_base_fact.failed or not ansible_zfs_datasets[0].mountpoint == mariadb_basedir )
+  when: mariadb_zfs_base | length > 0 and ( zfs_base_fact.failed or not ansible_zfs_datasets[0].mountpoint == mariadb_basedir )
   register: zfs_base
 
 - name: zfs innodb-logs
@@ -56,7 +56,7 @@
   service:
     name: zfs
     enabled: yes
-  when: mariadb_zfs_base | lenght > 0
+  when: mariadb_zfs_base | length > 0
 
 - name: login.conf
   blockinfile:

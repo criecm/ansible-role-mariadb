@@ -68,7 +68,7 @@
     host: '%'
     priv: '*.*:ALL,GRANT'
     state: present
-  when: 'mariadb_admin_user | lenght > 0 and mariadb_admin_password | lenght > 0'
+  when: 'mariadb_admin_user | length > 0 and mariadb_admin_password | length > 0'
 
 - name: root pass
   mysql_user:
@@ -88,11 +88,11 @@
     content: |
       [mysql]
       user=root
-      {% if mariadb_root_password | lenght > 0 %}password={{ mariadb_root_password }}{% endif %}
+      {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
        
       [mysqladmin]
       user=root
-      {% if mariadb_root_password | lenght > 0 %}password={{ mariadb_root_password }}{% endif %}
+      {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
 
 - name: new users
   mysql_user:
