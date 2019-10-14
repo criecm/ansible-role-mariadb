@@ -88,11 +88,11 @@
     content: |
       [mysql]
       user=root
-      {% if mariadb_root_password != "" %}password={{ mariadb_root_password }}{% endif %}
-      
+      {% if mariadb_root_password | lenght > 0 %}password={{ mariadb_root_password }}{% endif %}
+       
       [mysqladmin]
       user=root
-      {% if mariadb_root_password != "" %}password={{ mariadb_root_password }}{% endif %}
+      {% if mariadb_root_password | lenght > 0 %}password={{ mariadb_root_password }}{% endif %}
 
 - name: new users
   mysql_user:
