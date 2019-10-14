@@ -1,4 +1,5 @@
 galaxy_info:
+  role_name: mariadb
   author: Geoffroy Desvernay
   description: mariadb server instance(s) + DBs
   company: Ecole Centrale Marseille
@@ -10,8 +11,7 @@ galaxy_info:
   platforms:
     - name: FreeBSD
       versions:
-        - 11.2
-        - 12.0
+        - all
 
   galaxy_tags:
     - mariadb
