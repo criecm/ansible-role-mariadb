@@ -68,7 +68,7 @@
     host: '%'
     priv: '*.*:ALL,GRANT'
     state: present
-  when: 'mariadb_admin_user != "" and mariadb_admin_password != ""'
+  when: 'mariadb_admin_user | lenght > 0 and mariadb_admin_password | lenght > 0'
 
 - name: root pass
   mysql_user:
