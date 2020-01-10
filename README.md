@@ -11,6 +11,7 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
   You *need* to set this one
 * `mariadb_root_password`: ''
   Local access only / remote disabled
+* `mariadb_socket`: (/tmp/mysql.sock)
 * `mariadb_version`: (10.2)
 * `mariadb_basedir`: (/var/db/mysql)
 * `mariadb_logdir`: (/var/log/mysql)
@@ -34,7 +35,7 @@ Including an example of how to use your role (for instance, with variables passe
     # install / create db's from `mariadb_dbs` and users from `mariadb_users` and `mariadb_maintenance_users`
     - hosts: servers
       roles:
-         - { role: criecm.mariadb, mariadb_default_password: '42', mariadb_zfs_base: 'zdata/mariadb' }
+         - { role: criecm.mariadb, mariadb_admin_password: '42', mariadb_zfs_base: 'zdata/mariadb' }
 
     # just create a single database (the main task have already been run on the host(s))
     - hosts: dbservers
@@ -47,4 +48,3 @@ Including an example of how to use your role (for instance, with variables passe
 ## License
 
 BSD
-
