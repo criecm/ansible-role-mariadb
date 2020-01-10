@@ -35,25 +35,30 @@
         enabled: yes
     - name: no test db
       mysql_db:
+        login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
         name: test
         state: absent
     - name: no empty mysql user for localhost
       mysql_user:
+        login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
         name: ''
         host: localhost
         state: absent
     - name: no empty mysql user for any host
       mysql_user:
+        login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
         name: ''
         host_all: yes
         state: absent
     - name: no root on 127.0.0.1
       mysql_user:
+        login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
         name: 'root'
         host: '127.0.0.1'
         state: absent
     - name: no root on ::1
       mysql_user:
+        login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
         name: 'root'
         host: '::1'
         state: absent
@@ -72,6 +77,7 @@
 
 - name: root pass
   mysql_user:
+    login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
     name: root
     password: '{{ mariadb_root_password }}'
     host: localhost
@@ -89,13 +95,13 @@
       [mysql]
       user=root
       {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
-       
       [mysqladmin]
       user=root
       {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
 
 - name: new users
   mysql_user:
+    login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
     name: '{{ item.name }}'
     priv: '{{ item.priv | default("*.*:USAGE") }}'
     host: '{{ item.host | default("localhost") }}'
@@ -105,6 +111,7 @@
 
 - name: new dbs
   mysql_db:
+    login_unix_socket: '{{ (mariadb_version >= 10.4) | ternary("/tmp/mysql.sock", omit) }}'
     name: '{{ item.name }}'
     state: present
   with_items:
