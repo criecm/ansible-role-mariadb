@@ -88,4 +88,4 @@
     force: no
     dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
     content: |
-      {{ mariadb_logdir }}/*.log  root:{{ mariadb_group }}  640 7 1000  @T00  G
+      {{ mariadb_logdir }}/*.log  {{ mariadb_owner }}:{{ mariadb_group }}  640 7 1000  @T00  G {{ mariadb_basedir }}/{{ ansible_fqdn }}.pid
