@@ -30,7 +30,7 @@ innodb_buffer_pool_size = 2G
 innodb_log_group_home_dir = {{ mariadb_basedir }}/innodb-logs
 innodb_use_native_aio=ON
 ignore_db_dirs=innodb-logs
-{% if mariadb_version < 10.3 %}
+{% if mariadb_version is version_compare('10.3','<') %}
 innodb_use_trim=ON
 innodb_use_fallocate=ON
 {% endif %}
