@@ -95,6 +95,7 @@
       [mysql]
       user=root
       {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
+
       [mysqladmin]
       user=root
       {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}

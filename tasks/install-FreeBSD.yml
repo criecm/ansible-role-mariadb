@@ -83,6 +83,11 @@
     state: present
   register: install_mariadb
 
+- name: newsyslog.conf.d
+  file:
+    path: /usr/local/etc/newsyslog.conf.d
+    state: directory
+
 - name: newsyslog
   copy:
     force: no
