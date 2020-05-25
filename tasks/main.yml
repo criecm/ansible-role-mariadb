@@ -100,6 +100,12 @@
       user=root
       {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
 
+- name: local facts
+  copy:
+    src: my_dbs.fact
+    dest: '{{ etcprefix }}/etc/ansible/facts.d/my_dbs.fact'
+    mode: '0550'
+
 - name: new users
   mysql_user:
     login_unix_socket: '{{ mariadb_socket }}'
