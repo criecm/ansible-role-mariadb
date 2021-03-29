@@ -1,24 +1,21 @@
 ---
-- name: get installed packages
-  command: 'pkg info -ao'
+- name: get installed server version
+  command: 'pkg query -x "%v" "mariadb.*-server"'
   check_mode: False
-  register: pkglist
+  register: pkgvers
   changed_when: False
   failed_when: false
 
 - name: fix facts
   set_fact:
     # 1. currently running version
-    installed_mariadb_version: '{% if pkglist.stdout_lines | 
-      select("match","mariadb[0-9]*-server") | list | count > 0 
-      %}{{ pkglist.stdout_lines | select("match","mariadb[0-9]*-server") | list | first | 
-        regex_replace("^.*iadb([0-9]*)-server-([0-9\.]*)-?.*$","\2") }}{% 
-      else %}{{ mariadb_version }}{% endif %}'
+    installed_mariadb_version: '{% if pkgvers.stdout_lines | count > 0 
+      %}{{ pkgvers.stdout_lines[0] }}{% else %}{{ False }}{% endif %}'
 
 - name: fix facts
   set_fact:
-    mariadb_server_ini: '{% if installed_mariadb_version is version("10.4.13",">=") %}{{ mariadb_etcdir }}/conf.d/server.cnf{% else %}{{ mariadb_datadir }}/my.cnf{% endif %}'
-    mariadb_socket: '{% if installed_mariadb_version is version("10.4.13",">=") %}/var/run/mysql/mysql.sock{% else %}/tmp/mysql.sock{% endif %}'
+    mariadb_server_ini: '{% if not installed_mariadb_version or installed_mariadb_version is version("10.4.13",">=") %}{{ mariadb_etcdir }}/conf.d/server.cnf{% else %}{{ mariadb_datadir }}/my.cnf{% endif %}'
+    mariadb_socket: '{% if not installed_mariadb_version or installed_mariadb_version is version("10.4.13",">=") %}/var/run/mysql/mysql.sock{% else %}/tmp/mysql.sock{% endif %}'
 
 - name: get current dbdir
   command: '/usr/sbin/sysrc -nq mysql_dbdir'
@@ -105,7 +102,7 @@
     - innodb_use_trim
     - innodb_use_fallocate
     - innodb_file_format
-  when: installed_mariadb_version | default(mariadb_version) is version_compare('10.4', '>=')
+  when: installed_mariadb_version and installed_mariadb_version | default(mariadb_version) is version_compare('10.4', '>=')
   notify: reload mariadb
 
 - name: '{{ mariadb_server_ini }}'
@@ -185,10 +182,10 @@
     content: |
       {{ mariadb_logdir }}/*.log  {{ mariadb_owner }}:{{ mariadb_group }}  640 7 1000  @T00  G {{ mariadb_basedir }}/{{ ansible_fqdn }}.pid
 
-- name: re-get installed packages
-  command: 'pkg info -ao'
-  register: pkglist
+- name: get installed server version
+  command: 'pkg query -x "%v" "mariadb.*-server"'
   check_mode: False
+  register: pkgvers
   changed_when: False
   failed_when: false
 
@@ -197,9 +194,6 @@
     # 1. currently running one
     # 2. /data if zfs
     mariadb_datadir: '{{ curdatadir }}'
-    installed_mariadb_version: '{% if pkglist.stdout_lines | 
-      select("match","mariadb[0-9]*-server") | list | count > 0 
-      %}{{ pkglist.stdout_lines | select("match","mariadb[0-9]*-server") | list | first | 
-        regex_replace("^.*iadb([0-9]*)-server-([0-9\.]*)-?.*$","\2") }}{% 
-      endif %}'
+    installed_mariadb_version: '{% if pkgvers.stdout_lines | count > 0 
+      %}{{ pkglist.stdout_lines[0] }}{% endif %}'
   when: do_upgrade_mariadb | bool

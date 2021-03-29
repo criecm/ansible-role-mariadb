@@ -9,8 +9,6 @@
     - '{{ mariadb_datadir }}'
     - '{{ mariadb_innodb_logdir }}'
 
-- debug: var=zfs_base_fact
-
 - name: get zfs datadir facts
   zfs_facts:
     name: '{{ mariadb_datadir }}'
@@ -77,7 +75,7 @@
 - name: move logs
   block:
     - name: move old innodb_logs
-      shell: 'mv {{ oldinnodbdir | default(mariadb_basedir) }}/ib_logfile* {{ mariadb_innodb_logs }}/'
+      shell: 'mv {{ oldinnodbdir | default(mariadb_basedir) }}/ib_logfile* {{ mariadb_innodb_logdir }}/'
       failed_when: False
       when: zfs_innodb_logdir.changed | default(False)
           or oldinnodbdir | default(mariadb_innodb_logdir) != mariadb_innodb_logdir
@@ -87,7 +85,8 @@
         line: 'innodb_log_group_home_dir = {{ mariadb_innodb_logdir }}'
         regexp: '^innodb_log_group_home_dir.*$'
       notify: restart mariadb
-  when: zfs_base.changed | default(False) or (
+  when: oldinnodbdir | default(False) and
+      zfs_base.changed | default(False) or (
       mariadb_relayout_zfs | default(False) and
       not ( ansible_zfs_datasets | selectattr("mountpoint","equalto",mariadb_innodb_logdir) | list | count == 1 ) )
 
