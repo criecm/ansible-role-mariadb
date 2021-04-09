@@ -34,23 +34,15 @@
     currentdatadir: '{% if curdatadb.stat.exists %}{{ curdatadir.stdout }}{% else %}{{ mariadb_basedir }}{% endif %}'
 
 - name: get innodb_logdir
-  shell: 'eval $(grep ^innodb_log_group_home_dir {{ currentdatadir }}/my.cnf | sed "s/ //g"); echo $innodb_log_group_home_dir'
+  shell: 'eval $(grep ^innodb_log_group_home_dir {{ mariadb_server_ini }} | sed "s/ //g"); echo $innodb_log_group_home_dir'
   ignore_errors: True
   changed_when: False
   check_mode: False
   register: oldlogdir
 
-- name: get innodb_logdir II
-  shell: 'eval $(grep ^innodb_log_group_home_dir {{ mariadb_server_ini }} | sed "s/ //g"); echo $innodb_log_group_home_dir || echo {{ mariadb_datadir }}'
-  changed_when: False
-  ignore_errors: True
-  check_mode: False
-  register: oldlogdirII
-  when: 'oldlogdir.stdout == ""'
-
 - name: set innodblogdir fact
   set_fact:
-    oldinnodblogdir: '{% if oldlogdir.stdout != "" %}{{ oldlogdir.stdout }}{% else %}{{ oldlogdirII.stdout }}{% endif %}'
+    oldinnodblogdir: '{% if oldlogdir.stdout != "" %}{{ oldlogdir.stdout }}{% else %}{{ False }}{% endif %}'
 
 - name: get pid of mysqld
   command: pgrep mysqld
@@ -68,9 +60,8 @@
 
 - name: lock version
   set_fact:
-    mariadb_server_ini: '{% if installed_mariadb_version is version_compare("10.4.13",">=") %}/usr/local/etc/mysql/conf.d/server.cnf{% else %}{{ mariadb_datadir }}/my.cnf{% endif %}'
     mariadb_version: '{{ installed_mariadb_version | regex_replace("^([0-9]+\.[0-9]+)\..*$","\1") }}'
-  when: installed_mariadb_version | default(False) and mariadb_version+".0" is version_compare(installed_mariadb_version,">") and not do_upgrade_mariadb
+  when: installed_mariadb_version | default(False) and mariadb_version is version(installed_mariadb_version, '>=') and not do_upgrade_mariadb
 
 - debug:
     msg: |
@@ -98,11 +89,10 @@
     option: '{{ item }}'
     state: absent
   loop:
-    - bind-address
     - innodb_use_trim
     - innodb_use_fallocate
     - innodb_file_format
-  when: installed_mariadb_version and installed_mariadb_version | default(mariadb_version) is version_compare('10.4', '>=')
+  when: installed_mariadb_version and installed_mariadb_version | default(mariadb_version) is version('10.4', '>=')
   notify: reload mariadb
 
 - name: '{{ mariadb_server_ini }}'
@@ -115,10 +105,33 @@
   loop: '{{ my_cnf_mysqld_default | combine(my_cnf_mysqld) | dict2items }}'
   notify: reload mariadb
 
+- name: syslog
+  block:
+    - name: no log-errors
+      ini_file:
+        path: '{{ mariadb_server_ini }}'
+        section: '{{ mariadb_server_ini_section }}'
+        option: log-errors
+        state: absent
+      when: mariadb_use_syslog
+    - name: get rc args
+      command: 'sysrc -q mysql_args'
+      register: getrcargs
+      failed_when: False
+      changed_when: False
+      check_mode: False
+    - name: syslog in rc.conf
+      lineinfile:
+        dest: /etc/rc.conf
+        line: 'mysql_args="{{ getrcargs.stdout }} --syslog"'
+        regexp: '^mysql_args='
+      when: getrcargs.stdout is not search("--syslog")
+  when: mariadb_use_syslog
+
 - name: backup old my.cnf
   copy:
     src: '{{ mariadb_basedir }}/my.cnf'
-    dest: '{{ mariadb_basedir }}/my.cnf.ansible'
+    dest: '{{ mariadb_basedir }}/my.cnf.bak.ansible'
     remote_src: yes
   failed_when: False
   register: oldini
@@ -160,7 +173,7 @@
 
 - name: prepare pkg upgrade
   command: 'pkg set -yn mariadb{{ installed_mariadb_version | regex_replace("^([0-9]+)\.([0-9]+)\..*$","\1\2") }}-server:mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-server'
-  when: do_upgrade_mariadb and mariadb_installed_version | default(mariadb_version) is version_compare(installed_version,"<")
+  when: do_upgrade_mariadb and mariadb_installed_version | default(mariadb_version) is version_compare(mariadb_installed_version,"<")
 
 - name: install mariadb
   pkgng:
@@ -169,6 +182,14 @@
       - 'py{{ ansible_python_version | regex_replace("([2-3])\.([0-9]*)\..*$","\1\2") }}-pymysql'
     state: '{% if do_upgrade_mariadb | default(False) %}latest{% else %}present{% endif %}'
   register: install_mariadb
+
+- name: /var/run/mysql
+  file:
+    path: /var/run/mysql
+    owner: '{{ mariadb_owner }}'
+    mode: '0755'
+    group: '{{ mariadb_group }}'
+    state: directory
 
 - name: newsyslog.conf.d
   file:

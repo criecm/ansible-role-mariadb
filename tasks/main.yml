@@ -3,6 +3,9 @@
   include_vars: '{{ ansible_distribution }}.yml'
   ignore_errors: True
 
+- name: get status
+  include_tasks: 'getstatus.yml'
+
 - name: install
   include_tasks: 'install-{{ ansible_os_family }}.yml'
 
@@ -26,7 +29,7 @@
     state: directory
     owner: '{{ mariadb_owner }}'
     group: '{{ mariadb_group }}'
-    mode: 'ug+rwX,o-rwx'
+    mode: '0770'
     recurse: yes
 
 - name: start mariadb
@@ -94,6 +97,7 @@
         host: '::1'
         state: absent
   when: install_mariadb.changed
+  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
 
 - name: 'default admin {{ mariadb_admin_user }}'
   mysql_user:
@@ -105,6 +109,7 @@
     priv: '*.*:ALL,GRANT'
     state: present
   when: 'mariadb_admin_user | length > 0 and mariadb_admin_password | length > 0'
+  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
 
 - name: local facts
   copy:
@@ -121,6 +126,7 @@
     login_unix_socket: '{{ mariadb_socket }}'
     state: present
   with_items: '{{ mariadb_users | union(mariadb_maintenance_users) }}'
+  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
 
 - name: new dbs
   mysql_db:
@@ -130,6 +136,7 @@
   with_items:
     - '{{ mariadb_dbs }}'
   when: 'mariadb_dbs | count > 0'
+  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
 
 - name: mysql db users
   mysql_user:
@@ -142,4 +149,5 @@
   loop: 
     - '{{ mariadb_dbs }}'
   when: 'mariadb_dbs | count > 0 and item.user | default(False)'
+  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
 

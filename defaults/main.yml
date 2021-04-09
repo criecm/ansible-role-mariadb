@@ -18,13 +18,13 @@ mariadb_root_password: ''
 mariadb_users: []
 mariadb_maintenance_users: []
 mariadb_dbs: []
+mariadb_use_syslog: False
 server_id:
 nagios_from: 127.0.0.1
 my_cnf_mysqld_default:
   max_allowed_packet: '32M'
   max_connections: '100'
   slow_query_log_file: '{{ mariadb_logdir }}/slow.log'
-  log-error: '{{ mariadb_logdir }}/error.log'
   log-warnings: '2'
   innodb_file_per_table: '1'
   datadir: '{{ mariadb_datadir }}'

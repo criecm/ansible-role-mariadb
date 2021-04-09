@@ -28,6 +28,8 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
   like above, but to be defined globally
 * `mariadb_dbs`: ([])
   List of databases to create (dict with keys 'name')
+* `mariadb_config: ({})`
+  Dict of config directives to be inserted in server ini file
 
 ## one-shot (CLI) variables
 * `mariadb_relayout_zfs` (False)
