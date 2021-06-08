@@ -115,7 +115,7 @@
         state: absent
       when: mariadb_use_syslog
     - name: get rc args
-      command: 'sysrc -q mysql_args'
+      command: 'sysrc -qn mysql_args'
       register: getrcargs
       failed_when: False
       changed_when: False
