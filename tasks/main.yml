@@ -132,6 +132,8 @@
   mysql_db:
     name: '{{ item.name }}'
     login_unix_socket: '{{ mariadb_socket }}'
+    encoding: '{{ item.encoding | default("utf8") }}'
+    collation: '{{ item.collation | default("utf8_unicode_ci") }}'
     state: present
   with_items:
     - '{{ mariadb_dbs }}'
@@ -146,8 +148,7 @@
     priv: '{{ item.priv | default(item.name+".*:ALL") }}'
     login_unix_socket: '{{ mariadb_socket }}'
     state: present
-  loop: 
+  loop:
     - '{{ mariadb_dbs }}'
   when: 'mariadb_dbs | count > 0 and item.user | default(False)'
   run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
-
