@@ -191,6 +191,15 @@
   register: install_mariadb
   notify: mysql_upgrade
 
+- name: conf.d/server.cnf ZFS tuning
+  ini_file:
+    path: '{{ mariadb_server_ini }}'
+    section: '{{ mariadb_server_ini_section }}'
+    option: '{{ item.key }}'
+    value: '{{ item.value }}'
+  loop: '{{ my_cnf_mysqld_zfs | dict2items }}'
+  when: mariadb_zfs_base | length > 0
+
 - name: /var/run/mysql
   file:
     path: /var/run/mysql
