@@ -1,6 +1,6 @@
 ---
 # defaults file for criecm.mariadb
-mariadb_version: 10.4
+mariadb_version: 10.5
 mariadb_basedir: /var/db/mysql
 mariadb_datadir: /var/db/mysql
 mariadb_logdir: /var/log/mysql

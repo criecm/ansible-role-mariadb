@@ -2,12 +2,11 @@
 - name: get zfs facts
   zfs_facts:
     name: '{{ mariadb_zfs_base }}'
+    recurse: yes
   register: zfs_base_fact
   ignore_errors: True
   loop:
     - '{{ mariadb_zfs_base }}'
-    - '{{ mariadb_datadir }}'
-    - '{{ mariadb_innodb_logdir }}'
 
 - name: get zfs datadir facts
   zfs_facts:
@@ -27,9 +26,9 @@
     state: stopped
   when: zfs_base_fact | length > 0 and
       ansible_zfs_datasets | default(False) and (
-      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base) | list | map("name") | string == mariadb_basedir ) or
-      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base+"/innodb-logs") | list | map("mountpoint") | string == mariadb_innodb_logdir ) or
-      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base+"/data") | list | map("mountpoint") | string == mariadb_datadir ) )
+      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base) | list | map(attribute="mountpoint") | string == mariadb_basedir ) or
+      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base+"/innodb-logs") | list | map(attribute="mountpoint") | string == mariadb_innodb_logdir ) or
+      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base+"/data") | list | map(attribute="mountpoint") | string == mariadb_datadir ) )
 
 - name: move old basedir if any and no zfs
   block:

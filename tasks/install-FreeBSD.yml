@@ -6,6 +6,10 @@
   changed_when: False
   failed_when: false
 
+- name: upgrade all packages
+  command: 'pkg upgrade -y'
+  when: do_upgrade_mariadb
+
 - name: fix facts
   set_fact:
     # 1. currently running version
@@ -101,7 +105,7 @@
     section: '{{ mariadb_server_ini_section }}'
     option: '{{ item.key }}'
     value: '{{ item.value }}'
-    allow_no_value: yes
+    allow_no_value: '{{ item.value | bool | default(False) }}'
   loop: '{{ my_cnf_mysqld_default | combine(my_cnf_mysqld) | dict2items }}'
   notify: reload mariadb
 
@@ -173,7 +177,10 @@
 
 - name: prepare pkg upgrade
   command: 'pkg set -yn mariadb{{ installed_mariadb_version | regex_replace("^([0-9]+)\.([0-9]+)\..*$","\1\2") }}-server:mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-server'
-  when: do_upgrade_mariadb and mariadb_installed_version | default(mariadb_version) is version_compare(mariadb_installed_version,"<")
+  when: installed_mariadb_version and do_upgrade_mariadb and installed_mariadb_version | default(mariadb_version) is version_compare(installed_mariadb_version,"<")
+  loop:
+    - 'pkg set -yn mariadb{{ installed_mariadb_version | regex_replace("^([0-9]+)\.([0-9]+)\..*$","\1\2") }}-server:mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-server'
+    - 'pkg set -yn mariadb{{ installed_mariadb_version | regex_replace("^([0-9]+)\.([0-9]+)\..*$","\1\2") }}-client:mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-client'
 
 - name: install mariadb
   pkgng:
@@ -216,5 +223,5 @@
     # 2. /data if zfs
     mariadb_datadir: '{{ curdatadir }}'
     installed_mariadb_version: '{% if pkgvers.stdout_lines | count > 0 
-      %}{{ pkglist.stdout_lines[0] }}{% endif %}'
+      %}{{ pkgvers.stdout_lines[0] }}{% endif %}'
   when: do_upgrade_mariadb | bool
