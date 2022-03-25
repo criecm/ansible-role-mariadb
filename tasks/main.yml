@@ -15,22 +15,18 @@
       socket={{ mariadb_socket }}
       ini={{ mariadb_server_ini }}
 
-- name: log dir
+- name: chown dirs
   file:
-    dest: '{{ mariadb_logdir }}'
+    dest: '{{ item }}'
     state: directory
     mode: '0750'
     owner: '{{ mariadb_owner }}'
     group: '{{ mariadb_group }}'
-
-- name: dbdir
-  file:
-    dest: '{{ mariadb_basedir }}'
-    state: directory
-    owner: '{{ mariadb_owner }}'
-    group: '{{ mariadb_group }}'
-    mode: '0770'
-    recurse: yes
+  loop:
+    - '{{ mariadb_basedir }}'
+    - '{{ mariadb_datadir }}'
+    - '{{ mariadb_logdir }}'
+    - '{{ mariadb_innodb_logdir }}'
 
 - name: start mariadb
   service:
@@ -96,6 +92,8 @@
         name: 'root'
         host: '::1'
         state: absent
+    - name: load timezone infos
+      shell: 'mariadb-tzinfo-to-sql /usr/share/zoneinfo/ | mysql mysql'
   when: install_mariadb.changed
   run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
 

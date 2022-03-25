@@ -35,7 +35,7 @@
 
 - name: fact it
   set_fact:
-    currentdatadir: '{% if curdatadb.stat.exists %}{{ curdatadir.stdout }}{% else %}{{ mariadb_basedir }}{% endif %}'
+    currentdatadir: '{% if curdatadb.stat.exists %}{{ curdatadir.stdout }}{% else %}{{ mariadb_datadir }}{% endif %}'
 
 - name: get innodb_logdir
   shell: 'eval $(grep ^innodb_log_group_home_dir {{ mariadb_server_ini }} | sed "s/ //g"); echo $innodb_log_group_home_dir'
@@ -76,7 +76,7 @@
 
 - name: zfs layout
   include_tasks: 'zfs-layout.yml'
-  when: mariadb_zfs_base | length > 0 and ( not curdatadb.stat.exists or do_upgrade_mariadb )
+  when: mariadb_zfs_base | length > 0 and ( not curdatadb.stat.exists or do_upgrade_mariadb or mariadb_relayout_zfs | default(False))
 
 - name: mysql etcdirs
   file:
@@ -189,6 +189,7 @@
       - 'py{{ ansible_python_version | regex_replace("([2-3])\.([0-9]*)\..*$","\1\2") }}-pymysql'
     state: '{% if do_upgrade_mariadb | default(False) %}latest{% else %}present{% endif %}'
   register: install_mariadb
+  notify: mysql_upgrade
 
 - name: /var/run/mysql
   file:
@@ -221,7 +222,7 @@
   set_fact:
     # 1. currently running one
     # 2. /data if zfs
-    mariadb_datadir: '{{ curdatadir }}'
+    mariadb_datadir: '{{ currentdatadir }}'
     installed_mariadb_version: '{% if pkgvers.stdout_lines | count > 0 
       %}{{ pkgvers.stdout_lines[0] }}{% endif %}'
   when: do_upgrade_mariadb | bool

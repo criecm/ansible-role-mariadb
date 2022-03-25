@@ -18,6 +18,8 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
 * `mariadb_logdir`: (/var/log/mysql)
 * `mariadb_owner`: (mysql)
 * `mariadb_group`: (mysql)
+* `mariadb_use_syslog`: (True)
+  Use system's syslog instead of log files
 * `mariadb_zfs_base`: ('')
   if any, will create/set recordsize to 16K and create innodb-logs subdir (128K)
 * `mariadb_users`: ([])

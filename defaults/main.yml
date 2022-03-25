@@ -18,7 +18,7 @@ mariadb_root_password: ''
 mariadb_users: []
 mariadb_maintenance_users: []
 mariadb_dbs: []
-mariadb_use_syslog: False
+mariadb_use_syslog: True
 server_id:
 nagios_from: 127.0.0.1
 my_cnf_mysqld_default:
@@ -37,4 +37,8 @@ my_cnf_mysqld_zfs:
   innodb_doublewrite: '0'
   innodb_flush_method: 'O_DSYNC'
 
+# perform version upgrade
 do_upgrade_mariadb: False
+
+# move data to fit zfs layout
+mariadb_relayout_zfs: False

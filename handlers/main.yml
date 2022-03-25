@@ -9,3 +9,6 @@
   service:
     name: '{{ mariadb_service }}'
     state: restarted
+
+- name: mysql_upgrade
+  command: 'mysql_upgrade'
