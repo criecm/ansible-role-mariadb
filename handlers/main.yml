@@ -1,8 +1,5 @@
 ---
 # handlers file for criecm.mariadb
-- name: newsyslog
-  command: newsyslog
-
 - name: reload syslogd
   service:
     name: syslogd

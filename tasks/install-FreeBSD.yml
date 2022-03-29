@@ -8,7 +8,7 @@
 
 - name: fix facts
   set_fact:
-    # 1. currently running version
+    # 1. currently installed version
     installed_mariadb_version: '{% if pkgvers.stdout_lines | count > 0 
       %}{{ pkgvers.stdout_lines[0] }}{% else %}{{ False }}{% endif %}'
 
@@ -116,13 +116,12 @@
 
 - name: syslog
   block:
-    - name: no log-errors
+    - name: no log_error
       ini_file:
         path: '{{ mariadb_server_ini }}'
         section: '{{ mariadb_server_ini_section }}'
-        option: log_errors
+        option: log_error
         state: absent
-      when: mariadb_use_syslog
     - name: get rc args
       command: 'sysrc -qn mysql_args'
       register: getrcargs
@@ -140,14 +139,19 @@
       copy:
         dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
         content: |
-          {{ mariadb_logdir }}/*.log   640 7 1000  @T00  CG
-      notify: newsyslog
+          {{ mariadb_logdir }}/mariadb.log   640 7 10000  *  CG
+    - name: create log file if needed
+      copy:
+        dest: '{{ mariadb_logdir }}/mariadb.log'
+        content: ''
+        force: no
+        mode: '0640'
   when: mariadb_use_syslog
 
 - name: backup old my.cnf
   copy:
     src: '{{ mariadb_basedir }}/my.cnf'
-    dest: '{{ mariadb_basedir }}/my.cnf.bak.ansible'
+    dest: '{{ mariadb_basedir }}/my.cnf.bak.ansible_backup'
     remote_src: yes
   failed_when: False
   register: oldini
