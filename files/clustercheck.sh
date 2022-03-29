@@ -14,12 +14,12 @@ fi
 # admins to manually remove a node from a cluster easily.
 if [ -e "/var/tmp/clustercheck.disabled" ]; then
     # Shell return-code is 1
-    echo -en "HTTP/1.1 503 Service Unavailable\r\n"
-    echo -en "Content-Type: text/plain\r\n"
-    echo -en "Connection: close\r\n"
-    echo -en "Content-Length: 51\r\n"
-    echo -en "\r\n"
-    echo -en "Galera Cluster Node is manually disabled.\r\n"
+    printf "HTTP/1.1 503 Service Unavailable\r\n"
+    printf "Content-Type: text/plain\r\n"
+    printf "Connection: close\r\n"
+    printf "Content-Length: 51\r\n"
+    printf "\r\n"
+    printf "Galera Cluster Node is manually disabled.\r\n"
     sleep 0.1
     exit 1
 fi
@@ -65,35 +65,35 @@ then
             # read-only mode. The variable AVAILABLE_WHEN_READONLY is set to 0.
             # => return HTTP 503
             # Shell return-code is 1
-            echo -en "HTTP/1.1 503 Service Unavailable\r\n"
-            echo -en "Content-Type: text/plain\r\n"
-            echo -en "Connection: close\r\n"
-            echo -en "Content-Length: 43\r\n"
-            echo -en "\r\n"
-            echo -en "Galera Cluster Node is read-only.\r\n"
+            printf "HTTP/1.1 503 Service Unavailable\r\n"
+            printf "Content-Type: text/plain\r\n"
+            printf "Connection: close\r\n"
+            printf "Content-Length: 43\r\n"
+            printf "\r\n"
+            printf "Galera Cluster Node is read-only.\r\n"
             sleep 0.1
             exit 1
         fi
     fi
     # Galera Cluster node local state is 'Synced' => return HTTP 200
     # Shell return-code is 0
-    echo -en "HTTP/1.1 200 OK\r\n"
-    echo -en "Content-Type: text/plain\r\n"
-    echo -en "Connection: close\r\n"
-    echo -en "Content-Length: 40\r\n"
-    echo -en "\r\n"
-    echo -en "Galera Cluster Node is synced.\r\n"
+    printf "HTTP/1.1 200 OK\r\n"
+    printf "Content-Type: text/plain\r\n"
+    printf "Connection: close\r\n"
+    printf "Content-Length: 40\r\n"
+    printf "\r\n"
+    printf "Galera Cluster Node is synced.\r\n"
     sleep 0.1
     exit 0
 else
     # Galera Cluster node local state is not 'Synced' => return HTTP 503
     # Shell return-code is 1
-    echo -en "HTTP/1.1 503 Service Unavailable\r\n"
-    echo -en "Content-Type: text/plain\r\n"
-    echo -en "Connection: close\r\n"
-    echo -en "Content-Length: 44\r\n"
-    echo -en "\r\n"
-    echo -en "Galera Cluster Node is not synced.\r\n"
+    printf "HTTP/1.1 503 Service Unavailable\r\n"
+    printf "Content-Type: text/plain\r\n"
+    printf "Connection: close\r\n"
+    printf "Content-Length: 44\r\n"
+    printf "\r\n"
+    printf "Galera Cluster Node is not synced.\r\n"
     sleep 0.1
     exit 1
 fi
