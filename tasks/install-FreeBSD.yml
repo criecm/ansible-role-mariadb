@@ -120,7 +120,7 @@
       ini_file:
         path: '{{ mariadb_server_ini }}'
         section: '{{ mariadb_server_ini_section }}'
-        option: log-errors
+        option: log_errors
         state: absent
       when: mariadb_use_syslog
     - name: get rc args
