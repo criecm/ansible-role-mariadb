@@ -1,14 +1,29 @@
 ---
 # handlers file for criecm.mariadb
-- name: reload mariadb
+- name: newsyslog
+  command: newsyslog
+
+- name: reload syslogd
   service:
-    name: '{{ mariadb_service }}'
-    state: restarted
+    name: syslogd
+    state: reloaded
 
 - name: restart mariadb
   service:
     name: '{{ mariadb_service }}'
     state: restarted
+  when: not mariadb_no_restart | default(False)
 
 - name: mysql_upgrade
   command: 'mysql_upgrade'
+  when: not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
+
+- name: reload inetd
+  service:
+    name: inetd
+    state: reloaded
+
+- name: reload haproxy
+  service:
+    name: haproxy
+    state: reloaded

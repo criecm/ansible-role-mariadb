@@ -1,18 +1,17 @@
 # MariaDB
 
-Setup mariadb on FreeBSD host
+Setup mariadb (with galera cluster if wanted) on FreeBSD host
 
 Using `include_role/tasks_from: db.yml` creates a single db+user
 
 ## Role Variables (default value)
-
 * `mariadb_admin_user`: (admin)
 * `mariadb_admin_password`: ''
   You *need* to set this one
 * `mariadb_root_password`: ''
   Local access only / remote disabled
 * `mariadb_socket`: (/tmp/mysql.sock)
-* `mariadb_version`: (10.2)
+* `mariadb_version`: (10.5)
   Version to install if not already installed (or to upgrade to if `do_upgrade_mariadb==True`)
 * `mariadb_basedir`: (/var/db/mysql)
 * `mariadb_logdir`: (/var/log/mysql)
@@ -33,11 +32,26 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
 * `mariadb_config: ({})`
   Dict of config directives to be inserted in server ini file
 
+### galera specific
+* `galera` dict:
+*   `cluster_name`: your cluster name
+*   `nodes`: list of dicts containing:
+      `name` (short hostname)
+      `address` (ip or hostname)
+      `is_backup` if true, will only serve requests when master is failed (for haproxy)
+    ¡ First node will be master !
+*   `clustercheck`: dict with `user` and `pass` for haproxy check responder
+*   `galeracheck`: dict with `user` and `pass` for garb autolauncher
+*   `local_haproxy`: (False)
+    Replace mysqld on port 3306 with haproxy, change mariadb port to 3305 (or `galera.myport`)
+
 ## one-shot (CLI) variables
 * `mariadb_relayout_zfs` (False)
   If defined (on command-line!), will change data layout for ZFS use
 * `do_upgrade_mariadb` (False)
   If defined (CLI), upgrade mariadb packages to wanted/latest version
+* `init_galera_cluster_now` (False)
+  If defined, a NEW galera cluster will be initialized (breaking any existing cluster)
 
 ## Example Playbooks
 

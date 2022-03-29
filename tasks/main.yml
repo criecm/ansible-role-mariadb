@@ -28,6 +28,15 @@
     - '{{ mariadb_logdir }}'
     - '{{ mariadb_innodb_logdir }}'
 
+- name: mariadb port {{ mariadb_port }}
+  ini_file:
+    path: '{{ mariadb_etcdir }}/my.cnf'
+    section: client-server
+    option: port
+    value: '{{ mariadb_port }}'
+  when: not ( mariadb_current_config["port"] | default(False) and 
+    mariadb_current_config["port"] == mariadb_port )
+
 - name: start mariadb
   service:
     name: '{{ mariadb_service }}'
@@ -60,6 +69,10 @@
       [mysqladmin]
       user=root
       {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
+
+- name: galera cluster {{ galera.cluster_name | default("no") }}
+  include_tasks: 'galera-{{ ansible_os_family }}.yml'
+  when: galera.cluster_name | default(False)
 
 - name: first install
   block:
@@ -94,8 +107,8 @@
         state: absent
     - name: load timezone infos
       shell: 'mariadb-tzinfo-to-sql /usr/share/zoneinfo/ | mysql mysql'
-  when: install_mariadb.changed
-  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
+  when: install_mariadb.changed and not
+    ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
 
 - name: 'default admin {{ mariadb_admin_user }}'
   mysql_user:
@@ -107,7 +120,6 @@
     priv: '*.*:ALL,GRANT'
     state: present
   when: 'mariadb_admin_user | length > 0 and mariadb_admin_password | length > 0'
-  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
 
 - name: local facts
   copy:
@@ -124,7 +136,7 @@
     login_unix_socket: '{{ mariadb_socket }}'
     state: present
   with_items: '{{ mariadb_users | union(mariadb_maintenance_users) }}'
-  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
+  when: not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
 
 - name: new dbs
   mysql_db:
@@ -135,8 +147,8 @@
     state: present
   with_items:
     - '{{ mariadb_dbs }}'
-  when: 'mariadb_dbs | count > 0'
-  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
+  when: mariadb_dbs | count > 0 and
+    not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
 
 - name: mysql db users
   mysql_user:
@@ -148,5 +160,21 @@
     state: present
   loop:
     - '{{ mariadb_dbs }}'
-  when: 'mariadb_dbs | count > 0 and item.user | default(False)'
-  run_once: '{% if galera.cluster_name | default(False) %}True{% else %}False{% endif %}'
+  when: mariadb_dbs | count > 0 and item.user | default(False) and
+    not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
+
+- name: monitor tmp var
+  set_fact:
+    tmpmon:
+      - proto: mysql
+        name: '{{ ansible_fqdn }}'
+        port: '{{ mariadb_port }}'
+        type: mysql
+
+- name: register to_monitor
+  set_fact:
+    to_monitor: '{{ to_monitor | default([]) | union(tmpmon) }}'
+    cacheable: yes
+
+- debug:
+    var: to_monitor

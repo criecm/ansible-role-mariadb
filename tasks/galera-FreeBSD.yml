@@ -1,0 +1,210 @@
+# galera cluster
+---
+- name: install required packages
+  package:
+    name:
+      - bash
+      - socat
+      - haproxy
+    state: present
+
+- name: clustercheck script
+  copy:
+    src: clustercheck.sh
+    dest: /usr/local/bin/clustercheck
+    owner: root
+    group: wheel
+    mode: '0755'
+
+- name: clustercheck user
+  mysql_user:
+    login_unix_socket: '{{ mariadb_socket }}'
+    host: 'localhost'
+    name: '{{ galera.clustercheck.user }}'
+    password: '{{ galera.clustercheck.pass }}'
+    priv: '*.*:PROCESS'
+    state: present
+  when: galera.nodes[0].name == ansible_hostname
+
+- name: galeracheck user
+  mysql_user:
+    host: '%'
+    login_unix_socket: '{{ mariadb_socket }}'
+    name: '{{ galera.galeracheck.user }}'
+    password: '{{ galera.galeracheck.pass }}'
+    priv: '*.*:PROCESS'
+    state: present
+  when: galera.nodes[0].name == ansible_hostname
+
+- name: mysqlchk in /etc/services
+  lineinfile:
+    path: /etc/services
+    line: "mysqlchk\t9200/tcp\t# MySQL check"
+    state: present
+
+- name: mysqlchk inetd config
+  lineinfile:
+    path: /etc/inetd.conf
+    line: '{{ item }}'
+    regexp: '^{{ item | regex_replace("nowait.*$","") }}'
+    state: present
+  loop:
+    - "mysqlchk\tstream\ttcp\tnowait\tnobody\t/usr/local/bin/clustercheck\tclustercheck {{ galera.clustercheck.user }} {{ galera.clustercheck.pass }} 0 /dev/null -1 {{ mariadb_etcdir }}/my.cnf"
+    - "mysqlchk\tstream\ttcp6\tnowait\tnobody\t/usr/local/bin/clustercheck\tclustercheck {{ galera.clustercheck.user }} {{ galera.clustercheck.pass }}"
+  notify:
+    - reload inetd
+
+- name: start inetd
+  service:
+    name: inetd
+    state: started
+    enabled: yes
+
+- name: galeraboot script
+  copy:
+    src: galeraboot.sh
+    dest: /root/galeraboot.sh
+    mode: '0700'
+- name: galeraboot in rc.local
+  lineinfile:
+    dest: /etc/rc.local
+    line: '/root/galeraboot.sh'
+    mode: '0440'
+    create: yes
+
+- name: sst ipv6 if needed
+  ini_file:
+    path: '{{ mariadb_server_ini }}'
+    section: sst
+    option: sockopt
+    value: '",pf=ip6"'
+  notify:
+    - restart mariadb
+  when: galera.is_ipv6 | default(False)
+
+- name: galera ini config
+  ini_file:
+    path: '{{ mariadb_server_ini }}'
+    section: '{{ mariadb_process_name }}'
+    option: '{{ item.key }}'
+    value: '{{ item.value }}'
+  with_dict:
+    binlog_format: 'ROW'
+    innodb_autoinc_lock_mode: '2'
+    wsrep_cluster_address: '"gcomm://{% for node in galera.nodes %}{% if node.address is search(":.*:") %}[{{ node.address }}]{% else %}{{ node.address }}{% endif %}{% if not loop.last %},{% endif %}{% endfor %}"'
+    wsrep_cluster_name: '"{{ galera.cluster_name }}"'
+    wsrep_node_address: '"{% for node in galera.nodes %}{% if node.name == ansible_hostname %}{% if node.address is search(":.*:") %}[{{ node.address }}]{% else %}{{ node.address }}{% endif %}{% endif %}{% endfor %}"'
+    wsrep_node_name: '"{% for node in galera.nodes %}{% if node.name == ansible_hostname %}{{ node.name }}{% endif %}{% endfor %}"'
+    wsrep_provider: /usr/local/lib/libgalera_smm.so
+    wsrep_provider_options: '{{ galera.wsrep_provider_options | default("") }}'
+    wsrep_sst_method: 'rsync'
+    wsrep_on: 1
+  when: 'not ( mariadb_current_config[item.key] | default(False) and mariadb_current_config[item.key] == item.value )'
+  notify: restart mariadb
+
+- name: garb on master only
+  block:
+    - name: configure galera arbitrator
+      lineinfile:
+        path: /etc/rc.conf
+        state: present
+        line: '{{ item.key }}="{{ item.value }}"'
+      with_dict:
+        garb_galera_group: '{{ galera.cluster_name }}'
+        garb_galera_nodes: '{{ galera.nodes | map(attribute="address") | join(" ") }}'
+    - name: garb cron script
+      template:
+        src: garb_or_not.sh.j2
+        dest: /root/garb_or_not.sh
+        mode: '0750'
+    - name: garb_or_not cron
+      cron:
+        job: '/root/garb_or_not.sh'
+        minute: '*'
+        name: garb_or_not
+        user: root
+  when: galera.nodes[0].name == ansible_hostname
+
+# haproxy local
+- name: local haproxy
+  block:
+    - name: haproxy configuration
+      template:
+        src: haproxy.cfg.j2
+        dest: /usr/local/etc/haproxy.conf
+        owner: root
+        group: wheel
+        mode: '0640'
+      notify:
+        - reload haproxy
+    - name: haproxy log file
+      copy:
+        dest: /var/log/haproxy.log
+        content: ''
+        owner: root
+        group: wheel
+        mode: '0644'
+        force: no
+    - name: haproxy syslog config
+      copy:
+        content: |
+          local0.*  /var/log/haproxy.log
+        dest: /usr/local/etc/syslog.d/haproxy.conf
+        owner: root
+        group: wheel
+        mode: '0640'
+      notify:
+        - reload syslogd
+    - name: haproxy newsyslog
+      copy:
+        content: |
+          /var/log/haproxy.log  640 7 * CJ
+        dest: /usr/local/etc/newsyslog.conf.d/haproxy.conf
+    - name: haproxy service
+      service:
+        name: haproxy
+        enabled: yes
+        state: started
+  when: galera_local_haproxy
+
+- name: initialize galera cluster on master
+  block:
+    - name: get sysrc args
+      command: 'sysrc -n mysql_args'
+      register: orig_sysrc_args
+      failed_when: False
+      check_mode: False
+      changed_when: False
+    - name: stop current processes
+      service:
+        name: mysql-server
+        state: stopped
+    - name: ensure it is stopped
+      command: 'pkill -f -u mysql'
+      failed_when: False
+    - name: add sysrc arg
+      command: 'sysrc mysql_args="{{ orig_sysrc_args.stdout | default("") }} --wsrep_new_cluster"'
+    - name: start mariadb
+      service:
+        name: mysql-server
+        state: started
+    - name: remove sysrc arg --wsrep_new_cluster
+      command: '{% if orig_sysrc_args.rc != 0 %}sysrc -x mysql_args{% else %}sysrc mysql_args="{{ orig_sysrc_args.stdout }}"{% endif %}'
+    - name: avoid restart handler
+      set_fact:
+        mariadb_no_restart: yes
+  when: init_galera_cluster_now | default(False) and galera.nodes[0].name == ansible_hostname
+
+- name: monitor tmp var
+  set_fact:
+    tmpmon:
+      - proto: mysql
+        name: '{{ ansible_fqdn }}'
+        port: '3306'
+        type: galera
+
+- name: register to_monitor
+  set_fact:
+    to_monitor: '{{ to_monitor | default([]) | union(tmpmon) }}'
+    cacheable: yes
+

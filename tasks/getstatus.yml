@@ -1,17 +1,30 @@
-- name: get running mysqld
-  command: pgrep mysqld
+- name: get running {{ mariadb_process_name }}
+  command: pgrep {{ mariadb_process_name }}
   register: mypids
   check_mode: False
   failed_when: False
   changed_when: False
 
-- name: get cluster status
-  command: "mysql -e \"SHOW STATUS LIKE 'wsrep_cluster_size';\""
-  register: cluster_size
-  when: galera.cluster_name | default(False)
+- name: get current config
+  shell: "/usr/local/libexec/{{ mariadb_process_name }} --print-defaults | sed 's/--/\\n/g;' | sed 's/=\\([0-9]\\) $/: \\1/; s/=\\(.*\\) $/: \"\\1\"/;' | grep -v '^/' | grep -v '^$'"
+  register: mysqld_config
   check_mode: False
   failed_when: False
   changed_when: False
+  
+- name: get mariadb status vars
+  shell: "mysql -e \"SHOW STATUS LIKE 'wsrep_%';\" -s -N | sed 's/\\t\\([0-9]\\{1,\\}\\)$/: \\1/; s/\\t\\(.*\\)$/: \"\\1\"/'"
+  register: mysql_status
+  check_mode: False
+  failed_when: False
+  changed_when: False
+
+- name: register status
+  set_fact:
+    mariadb_current_status: '{% if mysql_status.rc == 0 %}{{ mysql_status.stdout | from_yaml }}{% else %}{}{% endif %}'
+    mariadb_current_config: '{% if mysqld_config.rc == 0 %}{{ mysql_status.stdout | from_yaml }}{% else %}{}{% endif %}'
+    mariadb_is_running: '{% if mypids.rc == 0 %}True{% else %}False{% endif %}'
+    galera_is_running: '{{ mariadb_current_status.wsrep_cluster_size | default(False) }}'
 
 - name: facts
   set_fact:

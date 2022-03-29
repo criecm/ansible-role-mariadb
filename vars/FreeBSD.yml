@@ -1,2 +1,3 @@
 ---
+etcdir: /usr/local/etc
 mariadb_etcdir: /usr/local/etc/mysql
