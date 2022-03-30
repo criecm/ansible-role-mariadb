@@ -56,7 +56,8 @@
     priv: '*.*:ALL,GRANT'
     check_implicit_admin: yes
     state: present
-  when: mariadb_root_password | length > 0
+  when: mariadb_root_password | length > 0 and
+    not init_galera_cluster_now | default(False) and galera.nodes[0].name != ansible_hostname
 
 - name: /root/.my.cnf
   copy:
@@ -121,7 +122,31 @@
     host: '%'
     priv: '*.*:ALL,GRANT'
     state: present
-  when: 'mariadb_admin_user | length > 0 and mariadb_admin_password | length > 0'
+  when: mariadb_admin_user | length > 0 and mariadb_admin_password | length > 0 and not
+    ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
+
+- name: galera checks users
+  block:
+    - name: clustercheck user
+      mysql_user:
+        login_unix_socket: '{{ mariadb_socket }}'
+        host: 'localhost'
+        name: '{{ galera.clustercheck.user }}'
+        password: '{{ galera.clustercheck.pass }}'
+        priv: '*.*:PROCESS'
+        state: present
+      when: galera.clustercheck | default(False)
+
+    - name: galeracheck user
+      mysql_user:
+        host: '%'
+        login_unix_socket: '{{ mariadb_socket }}'
+        name: '{{ galera.galeracheck.user }}'
+        password: '{{ galera.galeracheck.pass }}'
+        priv: '*.*:PROCESS'
+        state: present
+      when: galera.galeracheck | default(False)
+  when: cluster_name | default(False) and ansible_hostname == galera.nodes[0].name
 
 - name: local facts
   copy:
