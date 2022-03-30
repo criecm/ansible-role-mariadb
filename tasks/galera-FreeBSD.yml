@@ -37,13 +37,13 @@
   when: galera.nodes[0].name == ansible_hostname
 
 - name: mysqlchk in /etc/services
-  lineinfile:
+  lineinfile: # noqa no-tabs
     path: /etc/services
     line: "mysqlchk\t9200/tcp\t# MySQL check"
     state: present
 
 - name: mysqlchk inetd config
-  lineinfile:
+  lineinfile: # noqa no-tabs
     path: /etc/inetd.conf
     line: '{{ item }}'
     regexp: '^{{ item | regex_replace("nowait.*$","") }}'
@@ -78,6 +78,8 @@
     section: sst
     option: sockopt
     value: '",pf=ip6"'
+    mode: '0640'
+    group: '{{ mariadb_group }}'
   notify:
     - restart mariadb
   when: galera.is_ipv6 | default(False)
@@ -88,6 +90,8 @@
     section: '{{ mariadb_process_name }}'
     option: '{{ item.key }}'
     value: '{{ item.value }}'
+    mode: '0640'
+    group: '{{ mariadb_group }}'
   with_dict:
     binlog_format: 'ROW'
     innodb_autoinc_lock_mode: '2'
@@ -160,6 +164,7 @@
         content: |
           /var/log/haproxy.log  640 7 * CJ
         dest: /usr/local/etc/newsyslog.conf.d/haproxy.conf
+        mode: '0640'
     - name: haproxy service
       service:
         name: haproxy
@@ -176,16 +181,16 @@
       check_mode: False
       changed_when: False
     - name: stop current processes
-      service:
+      service: # noqa no-changed-when
         name: mysql-server
         state: stopped
     - name: ensure it is stopped
-      command: 'pkill -f -u mysql'
+      command: 'pkill -u mysql' # noqa no-changed-when
       failed_when: False
     - name: add sysrc arg
-      command: 'sysrc mysql_args="{{ orig_sysrc_args.stdout | default("") }} --wsrep_new_cluster"'
+      command: 'sysrc mysql_args="{{ orig_sysrc_args.stdout | default("") }} --wsrep_new_cluster"' # noqa no-changed-when
     - name: start mariadb
-      service:
+      service: # noqa no-changed-when
         name: mysql-server
         state: started
     - name: remove sysrc arg --wsrep_new_cluster

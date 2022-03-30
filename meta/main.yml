@@ -1,5 +1,6 @@
 galaxy_info:
   role_name: mariadb
+  namespace: criecm
   author: Geoffroy Desvernay
   description: mariadb server instance(s) + DBs
   company: Ecole Centrale Marseille

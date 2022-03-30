@@ -28,6 +28,7 @@
   copy:
     dest: '/root/{{ mydb.name }}.user'
     content: '{{ mydb.user }}:{{ mydb.pass }}'
+    mode: '0400'
   when: '"pass" not in mariadb'
 
 - name: fact db_pass

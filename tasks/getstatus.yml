@@ -6,14 +6,14 @@
   changed_when: False
 
 - name: get current config
-  shell: "/usr/local/libexec/{{ mariadb_process_name }} --print-defaults | sed 's/--/\\n/g;' | sed 's/=\\([0-9]\\) $/: \\1/; s/=\\(.*\\) $/: \"\\1\"/;' | grep -v '^/' | grep -v '^$'"
+  shell: "set -o pipefail && /usr/local/libexec/{{ mariadb_process_name }} --print-defaults | sed 's/--/\\n/g;' | sed 's/=\\([0-9]\\) $/: \\1/; s/=\\(.*\\) $/: \"\\1\"/;' | grep -v '^/' | grep -v '^$'"
   register: mysqld_config
   check_mode: False
   failed_when: False
   changed_when: False
   
 - name: get mariadb status vars
-  shell: "mysql -e \"SHOW STATUS LIKE 'wsrep_%';\" -s -N | sed 's/\\t\\([0-9]\\{1,\\}\\)$/: \\1/; s/\\t\\(.*\\)$/: \"\\1\"/'"
+  shell: "set -o pipefail && mysql -e \"SHOW STATUS LIKE 'wsrep_%';\" -s -N | sed 's/\\t\\([0-9]\\{1,\\}\\)$/: \\1/; s/\\t\\(.*\\)$/: \"\\1\"/'"
   register: mysql_status
   check_mode: False
   failed_when: False

@@ -1,7 +1,7 @@
 ---
 - name: vars
   include_vars: '{{ ansible_distribution }}.yml'
-  ignore_errors: True
+  failed_when: False
 
 - name: get status
   include_tasks: 'getstatus.yml'
@@ -9,7 +9,8 @@
 - name: install
   include_tasks: 'install-{{ ansible_os_family }}.yml'
 
-- debug:
+- name: show detected version
+  debug:
     msg: |
       version={{ mariadb_version }}
       socket={{ mariadb_socket }}
@@ -34,6 +35,7 @@
     section: client-server
     option: port
     value: '{{ mariadb_port }}'
+    mode: '644'
   when: not ( mariadb_current_config["port"] | default(False) and 
     mariadb_current_config["port"] == mariadb_port )
 
@@ -106,7 +108,7 @@
         host: '::1'
         state: absent
     - name: load timezone infos
-      shell: 'mariadb-tzinfo-to-sql /usr/share/zoneinfo/ | mysql mysql'
+      shell: 'set -o pipefail && mariadb-tzinfo-to-sql /usr/share/zoneinfo/ | mysql mysql' # noqa no-changed-when
   when: install_mariadb.changed and not
     ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
 
@@ -176,5 +178,6 @@
     to_monitor: '{{ to_monitor | default([]) | union(tmpmon) }}'
     cacheable: yes
 
-- debug:
+- name: monitor vars
+  debug:
     var: to_monitor

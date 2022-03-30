@@ -70,7 +70,8 @@
   when: installed_mariadb_version | default(False) and mariadb_version is version(installed_mariadb_version, '>=') and 
     not do_upgrade_mariadb
 
-- debug:
+- name: show detected dirs
+  debug:
     msg: |
       have {{ installed_mariadb_version }}
       Want {{ mariadb_version }}
@@ -96,6 +97,8 @@
     section: '{{ mariadb_server_ini_section }}'
     option: '{{ item }}'
     state: absent
+    mode: '0640'
+    group: '{{ mariadb_group }}'
   loop:
     - innodb_use_trim
     - innodb_use_fallocate
@@ -110,18 +113,28 @@
     option: '{{ item.key }}'
     value: '{{ item.value | default(ignore) }}'
     allow_no_value: '{% if item.value == "" %}yes{% else %}no{% endif %}'
+    mode: '0640'
+    group: '{{ mariadb_group }}'
   loop: '{{ my_cnf_mysqld_default | combine(my_cnf_mysqld) | dict2items }}'
-  when: 'installed_mariadb_version and mariadb_current_config[item.key] | default(False) and mariadb_current_config[item.key] != item.value'
+  when: not installed_mariadb_version or not mariadb_current_config[item.key] | default(False) or mariadb_current_config[item.key] != item.value
   notify: restart mariadb
 
 - name: syslog
   block:
+    - name: log dir
+      file:
+        path: '{{ mariadb_logdir }}'
+        state: directory
+        mode: '0750'
+        owner: '{{ mariadb_owner }}'
     - name: no log_error
       ini_file:
         path: '{{ mariadb_server_ini }}'
         section: '{{ mariadb_server_ini_section }}'
         option: log_error
         state: absent
+        mode: '0640'
+        group: '{{ mariadb_group }}'
     - name: get rc args
       command: 'sysrc -qn mysql_args'
       register: getrcargs
@@ -140,6 +153,7 @@
         dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
         content: |
           {{ mariadb_logdir }}/mariadb.log   640 7 10000  *  CG
+        mode: '0644'
     - name: create log file if needed
       copy:
         dest: '{{ mariadb_logdir }}/mariadb.log'
@@ -153,6 +167,8 @@
     src: '{{ mariadb_basedir }}/my.cnf'
     dest: '{{ mariadb_basedir }}/my.cnf.bak.ansible_backup'
     remote_src: yes
+    mode: '0640'
+    group: '{{ mariadb_group }}'
   failed_when: False
   register: oldini
   when: 'mariadb_server_ini != mariadb_basedir+"/my.cnf"'
@@ -222,14 +238,16 @@
     section: '{{ mariadb_server_ini_section }}'
     option: '{{ item.key }}'
     value: '{{ item.value }}'
+    mode: '0640'
+    group: '{{ mariadb_group }}'
   loop: '{{ my_cnf_mysqld_zfs | dict2items }}'
   when: 'mariadb_zfs_base | length > 0 and ( mariadb_current_config[item.key] | default(False) and mariadb_current_config[item.key] != item.value )'
 
 - name: /var/run/mysql
   file:
     path: /var/run/mysql
-    owner: '{{ mariadb_owner }}'
     mode: '0755'
+    owner: '{{ mariadb_owner }}'
     group: '{{ mariadb_group }}'
     state: directory
 
@@ -237,12 +255,14 @@
   file:
     path: /usr/local/etc/newsyslog.conf.d
     state: directory
+    mode: '0755'
 
 - name: newsyslog
   copy:
     dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
     content: |
       {{ mariadb_logdir }}/*.log  {{ mariadb_owner }}:{{ mariadb_group }}  640 7 1000  @T00  G /var/run/mysql/mysqld.pid
+    mode: '0644'
   when: not mariadb_use_syslog
 
 - name: get installed server version
