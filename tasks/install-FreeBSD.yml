@@ -178,7 +178,7 @@
     mode: '0755'
   loop:
     - newsyslog.conf.d
-    - syslog.conf.d
+    - syslog.d
 
 - name: newsyslog when no syslog
   copy:
@@ -219,11 +219,12 @@
       notify: reload syslogd
     - name: syslogd config
       copy:
-        dest: /usr/local/etc/syslog.conf.d/mariadb.conf
+        dest: /usr/local/etc/syslog.d/mariadb.conf
         content: |
           !mysqld
           *.*   {{ mariadb_logdir }}/mariadb.log
         mode: '0644'
+      notify: reload syslogd
     - name: newsyslog with syslog
       copy:
         dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
