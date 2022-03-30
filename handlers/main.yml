@@ -9,7 +9,7 @@
   service:
     name: '{{ mariadb_service }}'
     state: restarted
-  when: not mariadb_no_restart | default(False)
+  when: not mariadb_no_restart | default(False) or not mypids
 
 - name: mysql_upgrade
   command: 'mysql_upgrade'
