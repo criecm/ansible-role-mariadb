@@ -23,7 +23,7 @@
       %}/var/run/mysql/mysql.sock{% else %}/tmp/mysql.sock{% endif %}'
 
 - name: get current dbdir
-  command: '/usr/sbin/sysrc -nq mysql_dbdir'
+  shell: '/usr/sbin/sysrc -nq mysql_dbdir || echo /var/db/mysql'
   changed_when: False
   failed_when: False
   check_mode: False
