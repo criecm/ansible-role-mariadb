@@ -5,7 +5,6 @@
     name:
       - bash
       - socat
-      - haproxy
     state: present
 
 - name: clustercheck script
@@ -132,6 +131,10 @@
 # haproxy local
 - name: local haproxy
   block:
+    - name: haproxy package
+      package:
+        name: haproxy
+        state: present
     - name: haproxy configuration
       template:
         src: haproxy.cfg.j2
