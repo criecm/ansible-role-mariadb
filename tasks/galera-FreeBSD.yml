@@ -29,7 +29,7 @@
     state: present
   loop:
     - "mysqlchk\tstream\ttcp\tnowait\tnobody\t/usr/local/bin/clustercheck\tclustercheck {{ galera.clustercheck.user }} {{ galera.clustercheck.pass }} 0 /dev/null -1 {{ mariadb_etcdir }}/my.cnf"
-    - "mysqlchk\tstream\ttcp6\tnowait\tnobody\t/usr/local/bin/clustercheck\tclustercheck {{ galera.clustercheck.user }} {{ galera.clustercheck.pass }}"
+    - "mysqlchk\tstream\ttcp6\tnowait\tnobody\t/usr/local/bin/clustercheck\tclustercheck {{ galera.clustercheck.user }} {{ galera.clustercheck.pass }} 0 /dev/null -1 {{ mariadb_etcdir }}/my.cnf"
   notify:
     - reload inetd
 
