@@ -55,8 +55,6 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
 
 ## Example Playbooks
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
     # install / create db's from `mariadb_dbs` and users from `mariadb_users` and `mariadb_maintenance_users`
     - hosts: servers
       roles:
@@ -70,6 +68,23 @@ Including an example of how to use your role (for instance, with variables passe
       vars:
         mariadb: { name: mydatabase, user: myuser, pass: hispass, fromhost: mywebsrv.my.domain, priv: 'mydatabase.*:ALL' }
       # you'll find a generated password in `db_pass` fact if not provided
+
+    # Galera cluster
+    - hosts: mycluster # needs to be a group
+      vars:            # store these in group_vars !
+        galera:
+	  cluster_name: mycluster
+	  nodes:
+	    - { name: myserver1, address: 192.0.2.1 }
+	    - { name: myserver2, address: 192.0.2.2 }
+	    - { name: myserver3, address: 192.0.2.3 }
+	  clustercheck:
+            user: clustercheck
+            pass: 'Choose a unique password here'
+          galeracheck:
+            user: galeracheck
+            pass: 'Choose a(nother) unique password here'
+
 ## License
 
 BSD
