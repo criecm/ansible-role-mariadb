@@ -66,7 +66,7 @@
 - name: galera ini config
   ini_file:
     path: '{{ mariadb_server_ini }}'
-    section: '{{ mariadb_process_name }}'
+    section: '{{ mariadb_server_ini_section }}'
     option: '{{ item.key }}'
     value: '{{ item.value }}'
     mode: '0640'
