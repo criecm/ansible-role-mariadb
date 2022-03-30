@@ -14,21 +14,57 @@
   changed_when: False
   failed_when: False
 
-- name: stop mysql
-  service:
-    name: '{{ mariadb_service }}'
-    state: stopped
-  when: zfs_base_fact | length > 0 and
-      ( not curdatadb.stat.exists or mariadb_relayout_zfs ) and
-      ansible_zfs_datasets | default(False) and (
-      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base) | list | map(attribute="mountpoint") | list | default([]) | first | string == mariadb_basedir ) or
-      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base+"/innodb-logs") | list | map(attribute="mountpoint") | list | default([]) | first | string == mariadb_innodb_logdir ) or
-      ( not ansible_zfs_datasets | selectattr("name","equalto",mariadb_zfs_base+"/data") | list | map(attribute="mountpoint") | list | default([]) | first | string == mariadb_datadir ) )
-
 - name: stat basedir
   stat:
     path: '{{ mariadb_basedir }}'
   register: stat_basedir
+
+- name: set actual facts
+  set_fact:
+    innodb_log_has_zfs: '{% if ansible_zfs_datasets | default(False) and
+      ansible_zfs_datasets | selectattr("mountpoint","equalto",oldinnodbdir_fact.stdout) |
+      list | count == 1 %}True{% else %}False{% endif %}'
+    datadir_has_zfs: '{% if ansible_zfs_datasets | default(False) and
+      ansible_zfs_datasets | selectattr("mountpoint","equalto",mariadb_datadir) |
+      list | count == 1 %}True{% else %}False{% endif %}'
+    basedir_has_zfs: '{% if ansible_zfs_datasets | default(False) and
+      ansible_zfs_datasets | selectattr("mountpoint","equalto",mariadb_basedir) |
+      list | count == 1 %}True{% else %}False{% endif %}'
+
+- name: take decisions
+  set_fact:
+    need_move: '{% if curdatadb.stat.exists and ( not basedir_has_zfs or not
+      ( innodb_log_has_zfs and datadir_has_zfs ) ) %}True{% else %}False{% endif %}'
+    need_move_data: '{% if curdatadb.stat.exists and ( not datadir_has_zfs or
+      ( mariadb_datadir_wanted != mariadb_datadir ) ) %}True{% else %}False{% endif %}'
+    need_move_logs: '{% if curdatadb.stat.exists and ( not innodb_log_has_zfs or
+      ( mariadb_innodb_logdir != oldinnodbdir_fact.stdout | default(mariadb_datadir) ) )
+      %}True{% else %}False{% endif %}'
+    need_new: '{{ not curdatadb.stat.exists }}'
+
+- name: show decisions
+  debug:
+    msg: '{{ item }}'
+  loop:
+    - 'need_new: {{ need_new }}'
+    - 'need_move: {{ need_move }}'
+    - 'need_move_logs: {{ need_move_logs }}'
+    - 'need_move_data: {{ need_move_data }}'
+    - 'basedir_has_zfs: {{ basedir_has_zfs }}'
+    - 'datadir_has_zfs: {{ datadir_has_zfs }}'
+    - 'innodb_log_has_zfs: {{ innodb_log_has_zfs }}'
+
+- name: stop mysql
+  service:
+    name: '{{ mariadb_service }}'
+    state: stopped
+  when: ( need_move or need_move_logs or need_move_data ) and mariadb_relayout_zfs
+
+- name: enable system zfs
+  service:
+    name: zfs
+    enabled: yes
+    state: started
 
 - name: move old basedir if any and no zfs
   block:
@@ -40,10 +76,9 @@
         oldbasedir: '{{ mariadb_basedir }}.orig'
         olddatadir: '{{ mariadb_datadir | regex_replace(mariadb_basedir | regex_escape(),mariadb_basedir+".orig") }}'
         oldinnodbdir: '{{ oldinnodbdir_fact.stdout | default(mariadb_datadir) | regex_replace(mariadb_basedir | regex_escape(),mariadb_basedir+".orig") }}'
-  when: stat_basedir.stat.exists and mariadb_zfs_base | length > 0 and
-      ansible_zfs_datasets | default(False) and
-      mariadb_relayout_zfs and
-      not ( ansible_zfs_datasets | selectattr("mountpoint","equalto",mariadb_basedir ) | list | count == 1 )
+        need_move_data: True
+        need_move_logs: True
+  when: not basedir_has_zfs and need_move and mariadb_relayout_zfs
 
 - name: 'zfs {{ mariadb_zfs_base }}'
   zfs:
@@ -52,12 +87,9 @@
     extra_zfs_properties:
       mountpoint: '{{ mariadb_basedir }}'
       recordsize: 128K
-      compression: 'on'
+      compression: 'lz4'
       atime: 'off'
-  when: mariadb_zfs_base | length > 0 and
-      not curdatadb.stat.exists and
-      not ( ansible_zfs_datasets | default(False) and
-      ( ansible_zfs_datasets | selectattr("mountpoint","equalto",mariadb_basedir) | list | count == 1 ) )
+  when: not ( need_move and not mariadb_relayout_zfs )
   register: zfs_base
 
 - name: zfs innodb-logs
@@ -69,8 +101,7 @@
       recordsize: 128K
       sync: 'disabled'
   register: zfs_innodb_logdir
-  when: not curdatadb.stat.exists or
-      mariadb_relayout_zfs
+  when: not ( need_move_logs and not mariadb_relayout_zfs )
 
 - name: move logs
   block:
@@ -79,18 +110,21 @@
       failed_when: False
       when: zfs_innodb_logdir.changed | default(False)
           or oldinnodbdir | default(mariadb_innodb_logdir) != mariadb_innodb_logdir
-    - name: ini config innodb
-      lineinfile:
-        dest: '{{ mariadb_server_ini }}'
-        section: '{{ mariadb_server_ini_section }}'
-        option: 'innodb_log_group_home_dir'
-        value: '{{ mariadb_innodb_logdir }}'
-      notify: restart mariadb
-  when: oldinnodbdir | default(False) and
-      zfs_base.changed | default(False) or (
-      mariadb_relayout_zfs and
-      not ( ansible_zfs_datasets | default(False) and
-      ( ansible_zfs_datasets | selectattr("mountpoint","equalto",mariadb_innodb_logdir) | list | count == 1 ) ) )
+    - name: change innodb_log_has_zfs fact
+      set_fact:
+        innodb_log_has_zfs: True
+  when: oldinnodbdir | default(False) and need_move_logs and mariadb_relayout_zfs
+
+- name: ini config innodb_logs
+  ini_file:
+    dest: '{{ mariadb_server_ini }}'
+    section: '{{ mariadb_server_ini_section }}'
+    option: 'innodb_log_group_home_dir'
+    value: '{{ mariadb_innodb_logdir }}'
+    mode: '0640'
+    group: '{{ mariadb_group }}'
+  notify: restart mariadb
+  when: innodb_log_has_zfs or need_new
 
 - name: zfs datadir
   zfs:
@@ -101,10 +135,7 @@
       recordsize: '16K'
       sync: 'disabled'
   register: zfs_datadir
-  when: not curdatadb.stat.exists or
-      zfs_base.changed | default(False) or (
-      mariadb_datadir == mariadb_basedir and
-      mariadb_relayout_zfs | default(False) )
+  when: not ( need_move_data and not mariadb_relayout_zfs )
 
 - name: move data
   block:
@@ -120,6 +151,7 @@
       set_fact:
         mariadb_olddatadir: '{{ mariadb_datadir }}'
         mariadb_datadir: '{{ mariadb_datadir_wanted }}'
+        datadir_has_zfs: True
     - name: conf.d/server.cnf datadir
       ini_file:
         path: '{{ mariadb_server_ini }}'
@@ -133,14 +165,7 @@
         dest: /etc/rc.conf
         line: 'mysql_dbdir="{{ mariadb_datadir }}"'
         regexp: '^mysql_dbdir=.*$'
-  when: mariadb_datadir_wanted != mariadb_olddatadir | default(mariadb_datadir)
-      and mariadb_relayout_zfs | default(False)
-
-- name: enable system zfs
-  service:
-    name: zfs
-    enabled: yes
-  when: mariadb_zfs_base | length > 0
+  when: need_move_data and mariadb_relayout_zfs
 
 - name: get innodb-logs recordsize
   shell: "set -o pipefail && zfs get -H -p -o value recordsize $(df {{ mariadb_innodb_logdir }} | tail -1 | awk '{print $1}')"
@@ -152,3 +177,13 @@
   set_fact:
     zfs_log_recordsize: '{{ zfs_get_log_recordsize.stdout | default(16384) }}'
 
+- name: conf.d/server.cnf ZFS tuning
+  ini_file:
+    path: '{{ mariadb_server_ini }}'
+    section: '{{ mariadb_server_ini_section }}'
+    option: '{{ item.key }}'
+    value: '{{ item.value }}'
+    mode: '0640'
+    group: '{{ mariadb_group }}'
+  loop: '{{ my_cnf_mysqld_zfs | dict2items }}'
+  when: innodb_log_has_zfs or datadir_has_zfs or need_new
