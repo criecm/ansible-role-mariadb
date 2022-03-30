@@ -44,7 +44,7 @@
     name: '{{ mariadb_service }}'
     state: started
     enabled: yes
-  when: not init_galera_cluster_now | default(False) and galera.nodes[0].name != ansible_hostname
+  when: not ( init_galera_cluster_now | default(False) and galera.nodes[0].name != ansible_hostname )
 
 - name: root pass
   mysql_user:
