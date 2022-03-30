@@ -12,7 +12,7 @@
   shell: 'eval $(grep ^innodb_log_group_home_dir {{ mariadb_server_ini }} 2>/dev/null | sed "s/ //g" ); echo ${innodb_log_group_home_dir:-"{{ mariadb_datadir }}"}'
   register: oldinnodbdir_fact
   changed_when: False
-  failed_when: False
+  failed_when: False # noqa risky-shell-pipe
 
 - name: set innodblogdir fact
   set_fact:

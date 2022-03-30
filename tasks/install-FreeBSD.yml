@@ -126,10 +126,10 @@
   notify: mysql_upgrade
 
 - name: patch wsrep_sst_common for lsof
-  command: 'sed -i ".no_lsof" "s/lsof_available=1/lsof_available=0/" /usr/local/bin/wsrep_sst_common'
-  register: patch_wsrep_sst
-  args:
-    creates: /usr/local/bin/wsrep_sst_common.no_lsof
+  replace:
+    path: /usr/local/bin/wsrep_sst_common
+    regex: 'lsof_available=1'
+    replace: 'lsof_available=0'
 
 - name: zfs layout
   include_tasks: 'zfs-layout.yml'
