@@ -197,7 +197,7 @@
         name: mysql-server
         state: started
     - name: remove sysrc arg --wsrep_new_cluster
-      command: '{% if orig_sysrc_args.rc != 0 %}sysrc -x mysql_args{% else %}sysrc mysql_args="{{ orig_sysrc_args.stdout }}"{% endif %}'
+      command: '{% if orig_sysrc_args.rc != 0 %}sysrc -x mysql_args{% else %}sysrc mysql_args="{{ orig_sysrc_args.stdout }}"{% endif %}' # noqa no-changed-when
     - name: avoid restart handler
       set_fact:
         mariadb_no_restart: yes
