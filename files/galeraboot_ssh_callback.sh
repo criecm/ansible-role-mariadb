@@ -5,10 +5,14 @@ fi
 n=$(date +%s)
 pname=mysqld
 # 10.5+
-if [ -x /usr/local/libexec/mariadbd ]; then
+if [ -x /usr/local/libexec/mariadbd -a ! -L /usr/local/libexec/mariadbd ]; then
   pname=mariadbd
 fi
 
+if [ "$SSH_ORIGINAL_COMMAND" = "ping" ]; then
+  echo "pong"
+  exit 0
+fi
 DATADIR=$(sysrc -nq mysql_dbdir || echo /var/db/mysql)
 if ! [ -d "$DATADIR" ]; then
   echo "no DATADIR $DATADIR: exit" >&2
