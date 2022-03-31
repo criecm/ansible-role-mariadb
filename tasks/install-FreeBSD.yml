@@ -102,6 +102,12 @@
     - 'pkg set -yn mariadb{{ installed_mariadb_version | regex_replace("^([0-9]+)\.([0-9]+)\..*$","\1\2") }}-server:mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-server'
     - 'pkg set -yn mariadb{{ installed_mariadb_version | regex_replace("^([0-9]+)\.([0-9]+)\..*$","\1\2") }}-client:mariadb{{ mariadb_version | regex_replace("[^0-9]","") }}-client'
 
+- name: stop mysql before upgrade
+  service:
+    name: mysql-server
+    state: stopped
+  when: installed_mariadb_version and do_upgrade_mariadb and installed_mariadb_version | default(mariadb_version) is version_compare(mariadb_version,"<")
+
 - name: upgrade all packages
   command: 'pkg upgrade -y'
   when: do_upgrade_mariadb or not installed_mariadb_version
