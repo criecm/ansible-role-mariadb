@@ -59,6 +59,9 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
     - hosts: servers
       roles:
          - { role: criecm.mariadb, mariadb_admin_password: '42', mariadb_zfs_base: 'zdata/mariadb' }
+      vars:
+        mariadb_config:
+          bind-address: '::'
 
     # just create a single database (the main task have already been run on the host(s))
     - hosts: dbservers
@@ -84,6 +87,8 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
           galeracheck:
             user: galeracheck
             pass: 'Choose a(nother) unique password here'
+        mariadb_config:
+          bind-address: '*'
 
 ## License
 
