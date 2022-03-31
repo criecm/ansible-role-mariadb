@@ -3,6 +3,7 @@
   zfs_facts:
     name: '{{ mariadb_zfs_base }}'
     recurse: yes
+    type: filesystem
   register: zfs_base_fact
   ignore_errors: True
   loop:
@@ -12,12 +13,13 @@
   shell: 'eval $(grep ^innodb_log_group_home_dir {{ mariadb_server_ini }} 2>/dev/null | sed "s/ //g" ); echo ${innodb_log_group_home_dir:-"{{ mariadb_datadir }}"}'
   register: oldinnodbdir_fact
   changed_when: False
+  check_mode: False
   failed_when: False # noqa risky-shell-pipe
 
 - name: set innodblogdir fact
   set_fact:
     mariadb_innodb_logdir_wanted: '{{ mariadb_basedir + "/innodb-logs" }}'
-    mariadb_innodb_logdir: '{{ oldinnodbdir_fact.stdout }}'
+    mariadb_innodb_logdir: '{% if not curdatadb.stat.exists %}{{ mariadb_basedir }}/innodb-logs{% else %}{{ oldinnodbdir_fact.stdout }}{% endif %}'
 
 - name: stat basedir
   stat:
@@ -128,6 +130,13 @@
         mariadb_innodb_oldlogdir: '{{ mariadb_innodb_logdir }}'
         mariadb_innodb_logdir: '{{ mariadb_innodb_logdir_wanted }}'
         innodb_log_has_zfs: True
+    - name: chown
+      file:
+        path: '{{ mariadb_innodb_logdir }}'
+        state: directory
+        mode: '0750'
+        owner: '{{ mariadb_owner }}'
+        group: '{{ mariadb_group }}'
   when: oldinnodbdir | default(mariadb_innodb_logdir)
     and need_move_logs and mariadb_relayout_zfs
 
@@ -183,6 +192,13 @@
         dest: /etc/rc.conf
         line: 'mysql_dbdir="{{ mariadb_datadir }}"'
         regexp: '^mysql_dbdir=.*$'
+    - name: chown
+      file:
+        path: '{{ mariadb_datadir }}'
+        state: directory
+        mode: '0750'
+        owner: '{{ mariadb_owner }}'
+        group: '{{ mariadb_group }}'
   when: need_move_data and mariadb_relayout_zfs
 
 - name: get innodb-logs recordsize

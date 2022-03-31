@@ -48,7 +48,7 @@
 
 - name: set innodblogdir fact
   set_fact:
-    oldinnodblogdir: '{% if oldlogdir.stdout != "" %}{{ oldlogdir.stdout }}{% else %}{{ False }}{% endif %}'
+    oldinnodblogdir: '{% if oldlogdir.stdout != "" %}{{ oldlogdir.stdout }}{% else %}{{ currentdatadir }}{% endif %}'
 
 - name: get pid of {{ mariadb_process_name }}
   command: pgrep {{ mariadb_process_name }}
@@ -263,9 +263,9 @@
     line: '{{ item.key }}="{{ item.value }}"'
     regexp: '^{{ item.key }}='
   with_items:
-    - { key: mysql_enable, value: "YES" }
     - { key: mysql_dbdir, value: '{{ mariadb_datadir }}' }
-  when: curdatadir.rc != 0
+    - { key: mysql_enable, value: '{% if galera.cluster_name | default(False) %}NO{% else %}YES{% endif %}' }
+  when: curdatadir.stdout != mariadb_datadir
 
 - name: get installed server version
   command: 'pkg query -x "%v" "mariadb.*-server"'
