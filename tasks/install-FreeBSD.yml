@@ -128,7 +128,7 @@
 - name: patch wsrep_sst_common for lsof
   replace:
     path: /usr/local/bin/wsrep_sst_common
-    regex: 'lsof_available=1'
+    regexp: 'lsof_available=1'
     replace: 'lsof_available=0'
 
 - name: zfs layout
