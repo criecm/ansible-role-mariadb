@@ -15,7 +15,7 @@ for g in {{ galera.nodes | map(attribute="address") | list | join(" ") }}; do
 done
 
 r=$(( n % 2 ))
-if [ $r -eq 0 ]; then
+if [ $n -gt 0 -a $r -eq 0 ]; then
   if pgrep garb; then
     /usr/sbin/service garb onestop
   else
