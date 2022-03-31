@@ -17,7 +17,7 @@ if [ -e "/var/tmp/clustercheck.disabled" ]; then
     printf "HTTP/1.1 503 Service Unavailable\r\n"
     printf "Content-Type: text/plain\r\n"
     printf "Connection: close\r\n"
-    printf "Content-Length: 51\r\n"
+    printf "Content-Length: 43\r\n"
     printf "\r\n"
     printf "Galera Cluster Node is manually disabled.\r\n"
     sleep 0.1
@@ -68,7 +68,7 @@ then
             printf "HTTP/1.1 503 Service Unavailable\r\n"
             printf "Content-Type: text/plain\r\n"
             printf "Connection: close\r\n"
-            printf "Content-Length: 43\r\n"
+            printf "Content-Length: 35\r\n"
             printf "\r\n"
             printf "Galera Cluster Node is read-only.\r\n"
             sleep 0.1
@@ -80,7 +80,7 @@ then
     printf "HTTP/1.1 200 OK\r\n"
     printf "Content-Type: text/plain\r\n"
     printf "Connection: close\r\n"
-    printf "Content-Length: 40\r\n"
+    printf "Content-Length: 32\r\n"
     printf "\r\n"
     printf "Galera Cluster Node is synced.\r\n"
     sleep 0.1
@@ -91,7 +91,7 @@ else
     printf "HTTP/1.1 503 Service Unavailable\r\n"
     printf "Content-Type: text/plain\r\n"
     printf "Connection: close\r\n"
-    printf "Content-Length: 44\r\n"
+    printf "Content-Length: 36\r\n"
     printf "\r\n"
     printf "Galera Cluster Node is not synced.\r\n"
     sleep 0.1
