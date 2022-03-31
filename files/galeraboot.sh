@@ -6,7 +6,7 @@ pname=mysqld
 if [ -x /usr/local/libexec/mariadbd ]; then
   pname=mariadbd
 fi
-DATADIR=$(sysrc mysql_dbdir || echo /var/db/mysql)
+DATADIR=$(sysrc -nq mysql_dbdir || echo /var/db/mysql)
 if ! pgrep -qx $pname; then
   if grep -q '^safe_to_bootstrap: 1$' $DATADIR/grastate.dat; then
     oldarg=$(/usr/sbin/sysrc -n mysql_args | sed s/--wsrep-new-cluster//)
@@ -20,4 +20,7 @@ if ! pgrep -qx $pname; then
       sleep 30
     done
   fi
+fi
+if ! pgrep -qx $pname; then
+  logger -p crit -t "galeraboot.sh" "not safe to bootstrap \!"
 fi
