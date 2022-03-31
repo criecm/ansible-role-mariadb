@@ -39,17 +39,55 @@
     state: started
     enabled: yes
 
-- name: galeraboot script
+- name: scripts config
   copy:
-    src: galeraboot.sh
+    dest: /root/.galera.nodes
+    content: |
+      NODES="{{ galera.nodes | map(attribute='address') | list | join(' ') }}"
+    mode: '0400'
+- name: galeraboot ssh callback script
+  copy:
+    dest: /root/galeraboot_ssh_callback.sh
+    src: galeraboot_ssh_callback.sh
+    mode: '0500'
+- name: galeraboot.sh
+  copy:
     dest: /root/galeraboot.sh
-    mode: '0700'
-- name: galeraboot in rc.local
+    src: galeraboot.sh
+    mode: '0500'
+  when: ansible_hostname == galera.nodes[0].name
+- name: create ssh key
+  command: 'ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa_galeraboot'
+  args:
+    creates: '~/.ssh/id_rsa_galeraboot'
+  delegate_to: '{{ galera.nodes[0].name }}'
+- name: get ssh key
+  command: 'cat ~/.ssh/id_rsa_galeraboot.pub'
+  changed_when: False
+  register: galeraboot_ssh_key
+  delegate_to: '{{ galera.nodes[0].name }}'
+- name: allow ssh key
+  authorized_key:
+    key: '{{ galeraboot_ssh_key.stdout }}'
+    user: root
+    state: present
+    key_options: 'command="/root/galeraboot_ssh_callback.sh"'
+  when: galeraboot_ssh_key.stdout_lines | count > 0
+- name: make first ssh connection
+  command: |
+    ssh -i ~/.ssh/id_rsa_galeraboot -oStrictHostKeyChecking=no -oIdentitiesOnly=yes -oKbdInteractiveAuthentication=no -oUpdateHostKeys=yes {{ inventory_hostname }} 'getstatus'
+  register: first_ssh
+  changed_when: False
+  failed_when: first_ssh.stdout_lines | count == 0
+  delegate_to: '{{ galera.nodes[0].name }}'
+- name: galeraboot in rc.local for first node
   lineinfile:
     dest: /etc/rc.local
     line: '/root/galeraboot.sh'
+    regexp: 'galeraboot.sh'
     mode: '0440'
     create: yes
+    state: '{% if ansible_hostname == galera.nodes[0].name %}present{% else %}absent{% endif %}'
 
 - name: sst ipv6 if needed
   ini_file:

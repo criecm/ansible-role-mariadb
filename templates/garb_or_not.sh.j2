@@ -2,14 +2,16 @@
 #
 # compte les membres sur chaque noeud
 n=0
-for g in {{ galera.nodes | map(attribute="address") | list | join(" ") }}; do
-  nn=$(set -o pipefail && /usr/local/bin/mysql --no-defaults -h $g -P {{ mariadb_port }} -u {{ galera.galeracheck.user }} -p{{ galera.galeracheck.pass }} -e "SHOW STATUS LIKE 'wsrep_cluster_size';" -B | awk '/^wsrep_cluster_size/{print $2}') || continue
+. /root/.galera.nodes
+[ -n "$NODES" ] || exit 1
+for node in $NODES; do
+  nn=$(set -o pipefail && /usr/local/bin/mysql --no-defaults -h $node -P {{ mariadb_port }} -u {{ galera.galeracheck.user }} -p{{ galera.galeracheck.pass }} -e "SHOW STATUS LIKE 'wsrep_cluster_size';" -B | awk '/^wsrep_cluster_size/{print $2}') || continue
   if [ $n -eq 0 ]; then
     n=$nn
   fi
   if [ $n -ne $nn ]; then
     # si les noeuds sont pas tous ok, exit now !
-    echo "$g not ok (wsrep_cluster_size = $nn vs $n)"
+    echo "$node not ok (wsrep_cluster_size = $nn vs $n)"
     exit 1
   fi
 done

@@ -74,6 +74,7 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
 
     # Galera cluster
     - hosts: mycluster # needs to be a group
+      serial: 30%      # never on all nodes at the same time
       vars:            # store these in group_vars !
         galera:
 	  cluster_name: mycluster
@@ -89,6 +90,9 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
             pass: 'Choose a(nother) unique password here'
         mariadb_config:
           bind-address: '*'
+
+## TODO
+* add wsrep_notify_cmd to stop/start garb instead of cron
 
 ## License
 

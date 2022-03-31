@@ -43,7 +43,7 @@
   service:
     name: '{{ mariadb_service }}'
     state: started
-    enabled: yes
+    enabled: '{% if galera.cluster_name | default(False) %}no{% else %}yes{% endif %}'
   when: not ( init_galera_cluster_now | default(False) and galera.nodes[0].name != ansible_hostname )
 
 - name: root pass
