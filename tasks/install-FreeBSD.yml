@@ -190,7 +190,7 @@
   copy:
     dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
     content: |
-      {{ mariadb_logdir }}/mysqld.err  {{ mariadb_owner }}:{{ mariadb_group }}  640 7 1000  @T00  G /var/run/mysql/mysqld.pid
+      {{ mariadb_logdir }}/*.log  {{ mariadb_owner }}:{{ mariadb_group }}  640 7 10000  *  GZ /var/run/mysql/mysqld.pid
     mode: '0644'
   when: not mariadb_use_syslog
 
@@ -206,10 +206,13 @@
       ini_file:
         path: '{{ mariadb_server_ini }}'
         section: '{{ mariadb_server_ini_section }}'
-        option: log_error
+        option: '{{ item }}'
         state: absent
         mode: '0640'
         group: '{{ mariadb_group }}'
+      loop:
+        - log_error
+        - log-error
     - name: get rc args
       command: 'sysrc -qn mysql_args'
       register: getrcargs
@@ -235,7 +238,8 @@
       copy:
         dest: /usr/local/etc/newsyslog.conf.d/mariadb.conf
         content: |
-          {{ mariadb_logdir }}/mariadb.log   640 7 10000  *  CG
+          {{ mariadb_logdir }}/mariadb.log   640 7 10000  *  CZ
+          {{ mariadb_logdir }}/*.log  {{ mariadb_owner }}:{{ mariadb_group }}  640 7 10000  *  GZ /var/run/mysql/mysqld.pid
         mode: '0644'
     - name: create log file if needed
       copy:
