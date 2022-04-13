@@ -1,0 +1,23 @@
+- name: get installed server version
+  command: 'pkg query -x "%v" "mariadb.*-server"'
+  check_mode: False
+  register: pkgvers
+  changed_when: False
+  failed_when: false
+
+- name: fix facts
+  set_fact:
+    # 1. currently installed version
+    installed_mariadb_version: '{% if pkgvers.stdout_lines | count > 0 
+      %}{{ pkgvers.stdout_lines[0] }}{% else %}{{ False }}{% endif %}'
+
+- name: fix facts
+  set_fact:
+    mariadb_server_ini: '{% if not installed_mariadb_version 
+      or installed_mariadb_version is version("10.4.13",">=")
+      %}{{ mariadb_etcdir }}/conf.d/server.cnf{% 
+      else %}{{ mariadb_datadir }}/my.cnf{% endif %}'
+    mariadb_socket: '{% if not installed_mariadb_version or 
+      installed_mariadb_version is version("10.4.13",">=") 
+      %}/var/run/mysql/mysql.sock{% else %}/tmp/mysql.sock{% endif %}'
+
