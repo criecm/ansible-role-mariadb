@@ -1,3 +1,11 @@
+- name: get distrib facts
+  include_tasks: '{{ item }}'
+  with_first_found:
+    - files:
+        - 'status-{{ ansible_distribution }}.yml'
+      skip: true
+  run_once: yes
+
 - name: get running {{ mariadb_process_name }}
   command: pgrep {{ mariadb_process_name }}
   register: mypids

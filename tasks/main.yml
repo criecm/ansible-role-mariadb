@@ -165,27 +165,12 @@
   when: not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
 
 - name: new dbs
-  mysql_db:
-    name: '{{ item.name }}'
-    login_unix_socket: '{{ mariadb_socket }}'
-    encoding: '{{ item.encoding | default("utf8") }}'
-    collation: '{{ item.collation | default("utf8_unicode_ci") }}'
-    state: present
+  include_tasks: db.yml
+  loop_control:
+    loop_var: mariadb
   loop: '{{ mariadb_dbs }}'
-  when: mariadb_dbs | count > 0 and
-    not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
-
-- name: mysql db users
-  mysql_user:
-    name: '{{ item.user }}'
-    password: '{{ item.pass }}'
-    host: '{{ item.fromhost | default("%") }}'
-    priv: '{{ item.priv | default(item.name+".*:ALL") }}'
-    login_unix_socket: '{{ mariadb_socket }}'
-    state: present
-  loop: '{{ mariadb_dbs }}'
-  when: mariadb_dbs | count > 0 and item.user | default(False) and
-    not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
+  when: mariadb_dbs | count > 0
+  run_once: '{{ galera.cluster_name | default(False) | bool }}'
 
 - name: monitor tmp var
   set_fact:
