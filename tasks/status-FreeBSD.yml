@@ -20,4 +20,3 @@
     mariadb_socket: '{% if not installed_mariadb_version or 
       installed_mariadb_version is version("10.4.13",">=") 
       %}/var/run/mysql/mysql.sock{% else %}/tmp/mysql.sock{% endif %}'
-
