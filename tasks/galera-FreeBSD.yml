@@ -90,6 +90,7 @@
     state: absent
 - name: galeraboot @reboot cron
   cron:
+    name: galeraboot
     user: root
     job: '/root/galeraboot.sh'
     special_time: reboot
