@@ -212,6 +212,13 @@
         content: |
           !mysqld
           *.*   {{ mariadb_logdir }}/mariadb.log
+          !mysqld_safe
+          *.*   {{ mariadb_logdir }}/mariadb.log
+          !mariadbd
+          *.*   {{ mariadb_logdir }}/mariadb.log
+          !mariadbd-safe
+          *.*   {{ mariadb_logdir }}/mariadb.log
+          !*
         mode: '0644'
       notify: reload syslogd
     - name: newsyslog with syslog
