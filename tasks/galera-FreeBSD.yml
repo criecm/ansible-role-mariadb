@@ -87,8 +87,12 @@
     regexp: 'galeraboot.sh'
     mode: '0440'
     create: yes
-    state: '{% if ansible_hostname == galera.nodes[0].name %}present{% else %}absent{% endif %}'
-
+    state: absent
+- name: galeraboot @reboot cron
+  cron:
+    user: root
+    job: '/root/galeraboot.sh'
+    special_time: reboot
 - name: sst ipv6 if needed
   ini_file:
     path: '{{ mariadb_server_ini }}'
