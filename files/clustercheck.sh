@@ -17,12 +17,12 @@ httpReply() {
 
     if [ "${HTTP_STATUS}" = "503" ]
     then
-        echo -en "HTTP/1.1 503 Service Unavailable\r\n"
+        printf "HTTP/1.1 503 Service Unavailable\r\n"
     elif [ "${HTTP_STATUS}" = "200" ]
     then
-        echo -en "HTTP/1.1 200 OK\r\n"
+        printf "HTTP/1.1 200 OK\r\n"
     else
-        echo -en "HTTP/1.1 ${HTTP_STATUS}\r\n"
+        printf "HTTP/1.1 ${HTTP_STATUS}\r\n"
     fi
 
     printf "Content-Type: text/plain\r\n"
