@@ -150,7 +150,7 @@
 - name: local facts
   copy:
     src: my_dbs.fact
-    dest: '{{ etcprefix }}/etc/ansible/facts.d/my_dbs.fact'
+    dest: '{{ etcdir }}/ansible/facts.d/my_dbs.fact'
     mode: '0550'
 
 - name: new users
@@ -163,6 +163,7 @@
     state: present
   loop: '{{ mariadb_users | union(mariadb_maintenance_users) }}'
   when: not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
+  run_once: '{{ galera.cluster_name | default(False) | bool }}'
 
 - name: new dbs
   include_tasks: db.yml

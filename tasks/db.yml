@@ -24,7 +24,7 @@
   mysql_user:
     name: '{{ mydb.user }}'
     login_unix_socket: '{{ mariadb_socket }}'
-    priv: '{{ mydb.priv }}'
+    priv: '{{ mydb.priv | default(mydb.name+":ALL") }}'
     host: '{{ mydb.fromhost }}'
     password: '{{ mydb.pass }}'
     update_password: on_create
