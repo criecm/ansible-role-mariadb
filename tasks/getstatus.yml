@@ -32,9 +32,14 @@
     mariadb_current_status: '{% if mysql_status.rc == 0 %}{{ mysql_status.stdout | from_yaml }}{% else %}{}{% endif %}'
     mariadb_current_config: '{% if mysqld_config.rc == 0 %}{{ mysql_status.stdout | from_yaml }}{% else %}{}{% endif %}'
     mariadb_is_running: '{% if mypids.rc == 0 %}True{% else %}False{% endif %}'
-    galera_is_running: '{{ mariadb_current_status.wsrep_cluster_size | default(False) }}'
 
 - name: facts
   set_fact:
-    mysqld_running: '{% if mypids.rc == 0 %}True{% else %}False{% endif %}'
-    cluster_running: '{% if galera.cluster_name | default(False) and cluster_size.stdout_lines[1] | default(False) %}{{ cluster_size.stdout_lines[1] | regex_replace("^.*\t","") }}{% else %}False{% endif %}'
+    do_mariadb_install: '{% if not do_upgrade_mariadb and not mariadb_relayout_zfs and mariadb_is_running %}False{% else %}True{% endif %}'
+    galera_is_running: '{% if mariadb_current_status["wsrep_cluster_size"] > 1 %}True{% else %}False{% endif %}'
+
+- name: show status
+  debug:
+    msg: |
+      mariadb_is_running: {{ mariadb_is_running }}
+      galera_is_running: {{ galera_is_running }}
