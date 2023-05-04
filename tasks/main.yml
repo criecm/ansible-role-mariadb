@@ -8,6 +8,7 @@
 
 - name: install
   include_tasks: 'install-{{ ansible_os_family }}.yml'
+  when: do_mariadb_install
 
 - name: show detected version
   debug:
@@ -15,6 +16,7 @@
       version={{ mariadb_version }}
       socket={{ mariadb_socket }}
       ini={{ mariadb_server_ini }}
+  when: do_mariadb_install
 
 - name: chown dirs
   file:
@@ -28,6 +30,7 @@
     - '{{ mariadb_datadir }}'
     - '{{ mariadb_logdir }}'
     - '{{ mariadb_innodb_logdir }}'
+  when: do_mariadb_install
 
 - name: mariadb port {{ mariadb_port }}
   ini_file:
@@ -37,13 +40,13 @@
     value: '{{ mariadb_port }}'
     mode: '644'
   when: not ( mariadb_current_config["port"] | default(False) and 
-    mariadb_current_config["port"] == mariadb_port )
+    mariadb_current_config["port"] == mariadb_port ) and do_mariadb_install
 
 - name: start mariadb
   service:
     name: '{{ mariadb_service }}'
     state: started
-  when: not ( init_galera_cluster_now | default(False) and galera.nodes[0].name == ansible_hostname )
+  when: not ( init_galera_cluster_now | default(False) and galera.nodes[0].name == ansible_hostname ) and do_mariadb_install
 
 - name: root pass
   mysql_user:
@@ -72,10 +75,11 @@
       [mysqladmin]
       user=root
       {% if mariadb_root_password | length > 0 %}password={{ mariadb_root_password }}{% endif %}
+  when: do_mariadb_install
 
 - name: galera cluster {{ galera.cluster_name | default("no") }}
   include_tasks: 'galera-{{ ansible_os_family }}.yml'
-  when: galera.cluster_name | default(False)
+  when: galera.cluster_name | default(False) and do_mariadb_install
 
 - name: first install
   block:
@@ -110,7 +114,7 @@
         state: absent
     - name: load timezone infos
       shell: 'set -o pipefail && mariadb-tzinfo-to-sql /usr/share/zoneinfo/ | mysql mysql' # noqa no-changed-when
-  when: install_mariadb.changed and not
+  when: install_mariadb.changed | default(False) and not
     ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
 
 - name: 'default admin {{ mariadb_admin_user }}'
@@ -124,6 +128,7 @@
     state: present
   when: mariadb_admin_user | length > 0 and mariadb_admin_password | length > 0 and not
     ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
+    and do_mariadb_install
 
 - name: galera checks users
   block:
@@ -146,6 +151,7 @@
         state: present
       when: galera.galeracheck | default(False)
   when: galera.cluster_name | default(False) and ansible_hostname == galera.nodes[0].name
+    and do_mariadb_install
 
 - name: local facts
   copy:
@@ -163,7 +169,7 @@
     state: present
   loop: '{{ mariadb_users | union(mariadb_maintenance_users) }}'
   when: not ( galera.cluster_name | default(False) and ansible_hostname != galera.nodes[0].name )
-  run_once: '{{ galera.cluster_name | default(False) | bool }}'
+  run_once: '{{ galera_is_running }}'
 
 - name: new dbs
   include_tasks: db.yml
@@ -171,7 +177,7 @@
     loop_var: mariadb
   loop: '{{ mariadb_dbs }}'
   when: mariadb_dbs | count > 0
-  run_once: '{{ galera.cluster_name | default(False) | bool }}'
+  run_once: '{{ galera_is_running }}'
 
 - name: monitor tmp var
   set_fact:
