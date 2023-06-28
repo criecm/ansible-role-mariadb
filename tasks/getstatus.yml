@@ -36,7 +36,7 @@
 - name: facts
   set_fact:
     do_mariadb_install: '{% if not do_upgrade_mariadb and not mariadb_relayout_zfs and mariadb_is_running %}False{% else %}True{% endif %}'
-    galera_is_running: '{% if mariadb_current_status["wsrep_cluster_size"] > 1 %}True{% else %}False{% endif %}'
+    galera_is_running: '{% if mariadb_current_status["wsrep_cluster_size"] | default(0) > 1 %}True{% else %}False{% endif %}'
 
 - name: show status
   debug:
