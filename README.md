@@ -65,12 +65,13 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
 
     # just create a single database (the main task have already been run on the host(s))
     - hosts: dbservers
-      include_role:
-        name: criecm.mariadb
-	tasks_from: db.yml
-      vars:
-        mariadb: { name: mydatabase, user: myuser, pass: hispass, fromhost: mywebsrv.my.domain, priv: 'mydatabase.*:ALL' }
-      # you'll find a generated password in `db_pass` fact if not provided
+      tasks:
+      - include_role:
+          name: criecm.mariadb
+          tasks_from: db.yml
+        vars:
+          mariadb: { name: mydatabase, user: myuser, pass: hispass, fromhost: mywebsrv.my.domain, priv: 'mydatabase.*:ALL' }
+        # you'll find a generated password in `db_pass` fact if not provided
 
     # Galera cluster
     - hosts: mycluster # needs to be a group
