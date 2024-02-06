@@ -47,8 +47,7 @@
 - name: lock version
   set_fact:
     mariadb_version: '{{ installed_mariadb_version | regex_replace("^([0-9]+\.[0-9]+)\..*$","\1") }}'
-  when: installed_mariadb_version | default(False) and mariadb_version is version(installed_mariadb_version, '>=') and 
-    not do_upgrade_mariadb
+  when: installed_mariadb_version | default(False) and not do_upgrade_mariadb
 
 - name: show detected dirs
   debug:
