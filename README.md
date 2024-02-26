@@ -11,7 +11,7 @@ Using `include_role/tasks_from: db.yml` creates a single db+user
 * `mariadb_root_password`: ''
   Local access only / remote disabled
 * `mariadb_socket`: (/tmp/mysql.sock)
-* `mariadb_version`: (10.5)
+* `mariadb_version`: (10.11)
   Version to install if not already installed (or to upgrade to if `do_upgrade_mariadb==True`)
 * `mariadb_basedir`: (/var/db/mysql)
 * `mariadb_logdir`: (/var/log/mysql)
