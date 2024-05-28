@@ -41,7 +41,6 @@ my_cnf_mysqld_zfs:
   innodb_read_io_threads: '10'
   innodb_write_io_threads: '10'
   innodb_fast_shutdown: '{% if mariadb_version is version("10.4",">=") %}3{% else %}1{% endif %}'
-  innodb_log_write_ahead_size: '{{ zfs_log_recordsize }}'
 
 # https://galeracluster.com/library/training/tutorials/configuration.html
 my_cnf_mysqld_galera:

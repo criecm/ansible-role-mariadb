@@ -12,7 +12,7 @@
   when: not mariadb_no_restart | default(False) or not mypids
 
 - name: mysql_upgrade
-  command: 'mysql_upgrade'
+  command: 'mariadb-upgrade'
 
 - name: reload inetd
   service:
