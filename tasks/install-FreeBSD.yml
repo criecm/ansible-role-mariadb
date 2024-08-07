@@ -12,6 +12,7 @@
 - name: stat current dbdir
   stat:
     path: '{{ curdatadir.stdout }}/ibdata1'
+    get_checksum: False
   register: curdatadb
 
 - name: fact it
