@@ -121,7 +121,16 @@
   include_tasks: 'zfs-layout.yml'
   when: mariadb_zfs_base | length > 0
 
-- name: remove old innodb options
+- name: list removed options for {{ mariadb_version }}
+  set_fact:
+    removed_params: |
+      [{% for vers in removed_mariadb_params.keys() %}
+      {% if vers is version_compare(mariadb_version,"<=") %}
+      "{{ removed_mariadb_params[vers] | join('","') }}"
+      {% endif %}
+      {% endfor %}]
+
+- name: remove removed mariadb params for {{ mariadb_version }}
   ini_file:
     path: '{{ mariadb_server_ini }}'
     section: '{{ mariadb_server_ini_section }}'
@@ -129,11 +138,9 @@
     state: absent
     mode: '0640'
     group: '{{ mariadb_group }}'
-  loop:
-    - innodb_use_trim
-    - innodb_use_fallocate
-    - innodb_file_format
-  when: installed_mariadb_version and installed_mariadb_version | default(mariadb_version) is version('10.4', '>=')
+    backup: True
+  loop: '{{ removed_params }}'
+  when: installed_mariadb_version and removed_params | count() > 0
   notify: restart mariadb
 
 - name: '{{ mariadb_server_ini }}'

@@ -56,3 +56,67 @@ mariadb_relayout_zfs: False
 monitoring_from: []
 
 admin_from: []
+
+removed_mariadb_params:
+  10.4:
+    - innodb_use_trim
+    - innodb_use_fallocate
+    - innodb_file_format
+  10.5:
+    - innodb_checksums
+    - innodb_idle_flush_pct
+    - innodb_locks_unsafe_for_binlog
+    - innodb_rollback_segments
+    - innodb_stats_sample_pages
+    - max_long_data_size
+    - multi_range_count
+    - thread_concurrency
+    - timed_mutexes
+  10.6:
+    - innodb_adaptive_max_sleep_delay
+    - innodb_background_scrub_data_check_interval
+    - innodb_background_scrub_data_compressed
+    - innodb_background_scrub_data_interval
+    - innodb_background_scrub_data_uncompressed
+    - innodb_buffer_pool_instances
+    - innodb_checksum_algorithm
+    - innodb_commit_concurrency
+    - innodb_concurrency_tickets
+    - innodb_file_format
+    - innodb_large_prefix
+    - innodb_lock_schedule_algorithm
+    - innodb_log_checksums
+    - innodb_log_compressed_pages
+    - innodb_log_files_in_group
+    - innodb_log_optimize_ddl
+    - innodb_page_cleaners
+    - innodb_replication_delay
+    - innodb_scrub_log
+    - innodb_scrub_log_speed
+    - innodb_sync_array_size
+    - innodb_thread_concurrency
+    - innodb_thread_sleep_delay
+    - innodb_undo_logs
+  10.11:
+    - innodb_log_write_ahead_size
+    - innodb_version
+    - wsrep_replicate_myisam
+    - wsrep_strict_ddl
+  11.0:
+    - innodb_change_buffer_max_size
+    - innodb_change_buffering
+  11.1:
+    - innodb_defragment
+    - innodb_defragment_fill_factor
+    - innodb_defragment_fill_factor_n_recs
+    - innodb_defragment_frequency
+    - innodb_defragment_n_pages
+    - innodb_defragment_stats_accuracy
+  11.2:
+    - old_alter_table
+  11.3:
+    - date_format
+    - datetime_format
+    - max_tmp_tables
+    - time_format
+    - wsrep_causal_reads
