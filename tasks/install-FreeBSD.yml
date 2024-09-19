@@ -268,7 +268,7 @@
     regexp: '^{{ item.key }}='
   with_items:
     - { key: mysql_dbdir, value: '{{ mariadb_datadir }}' }
-    - { key: mysql_enable, value: '{% if galera.cluster_name | default(False) %}NO{% else %}YES{% endif %}' }
+    - { key: mysql_enable, value: 'YES' }
   when: curdatadir.stdout != mariadb_datadir
 
 - name: get installed server version
@@ -283,6 +283,12 @@
     # 1. currently running one
     # 2. /data if zfs
     mariadb_datadir: '{{ currentdatadir }}'
+    old_installed_mariadb_version: '{{ installed_mariadb_version }}'
     installed_mariadb_version: '{% if pkgvers.stdout_lines | count > 0 
       %}{{ pkgvers.stdout_lines[0] }}{% endif %}'
   when: do_upgrade_mariadb | bool
+
+- name: mariadb-upgrade
+  command: 'mariadb-upgrade'
+  when: do_upgrade_mariadb | bool and installed_mariadb_version is version(old_installed_mariadb_version,">")
+  throttle: 1
